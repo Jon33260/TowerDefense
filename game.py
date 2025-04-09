@@ -47,9 +47,13 @@ class Game:
                 pygame.display.update()  # Met à jour l'écran
                 self.wait_for_restart()  # Attend une touche pour redémarrer
 
-            # Si toutes les vagues sont terminées et que la santé du château est encore là
+             # Si toutes les vagues sont terminées et que la santé du château est encore là
             if self.wave_number >= self.max_waves and len(self.enemies) == 0:
-                self.display_game_over("Partie terminée")  # Affiche la fin du jeu
+                # Si la santé du château est encore positive, affiche le message de victoire
+                if self.castle_health > 0:
+                    self.display_game_over("Félicitations, vous avez gagné !")  # Affiche la victoire
+                else:
+                    self.display_game_over("Partie terminée")  # Affiche la fin du jeu
                 pygame.display.update()
                 self.wait_for_restart()
 

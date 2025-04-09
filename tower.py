@@ -1,36 +1,45 @@
 import pygame
 import math
-from projectile import Projectile
 
 class Tower:
     def __init__(self, x, y):
-        self.x = x
+        self.x = x  # Position de la tour
         self.y = y
-        self.range = 150  # Portée de la tour
-        self.attack_speed = 60  # Vitesse d'attaque en frames
-        self.projectiles = []  # Liste des projectiles
-        self.last_shot_time = 0
+        self.range = 100  # Portée de la tour
+        self.tower_image = pygame.image.load("assets/towers/tourPython.png").convert_alpha()  # Image de la tour
+        
+        # Obtenir la taille actuelle de l'image
+        width, height = self.tower_image.get_size()
+        
+        # Diviser la taille par 2
+        new_width = width // 2
+        new_height = height // 2
+        
+        # Redimensionner l'image de la tour
+        self.tower_image = pygame.transform.scale(self.tower_image, (new_width, new_height))
+
+        # Définir le rect de la tour avec la nouvelle taille
+        self.rect = self.tower_image.get_rect(center=(self.x, self.y))  # Rectangle de la tour avec les nouvelles dimensions
+
+    def is_in_range(self, enemy):
+        """ Vérifie si l'ennemi est dans la portée de la tour """
+        dx = self.x - enemy.pos[0]
+        dy = self.y - enemy.pos[1]
+        distance = (dx**2 + dy**2) ** 0.5
+        return distance <= self.range
 
     def update(self, enemies):
-        # Chercher l'ennemi le plus proche dans la portée de la tour
+        """ Met à jour la logique de la tour (tirer sur les ennemis dans la portée) """
         for enemy in enemies:
-            distance = math.sqrt((enemy.pos[0] - self.x) ** 2 + (enemy.pos[1] - self.y) ** 2)
-            if distance <= self.range:
-                self.shoot(enemy)  # Tirer sur l'ennemi
+            if self.is_in_range(enemy):
+                self.attack(enemy)
 
-        # Mettre à jour les projectiles
-        self.projectiles = [p for p in self.projectiles if not p.update()]  # Retirer les projectiles touchés
-
-    def shoot(self, enemy):
-        # Créer un projectile qui va vers l'ennemi
-        if pygame.time.get_ticks() - self.last_shot_time > self.attack_speed:
-            self.projectiles.append(Projectile(self.x, self.y, enemy))
-            self.last_shot_time = pygame.time.get_ticks()  # Mise à jour du temps du dernier tir
+    def attack(self, enemy):
+        """ Attaque l'ennemi """
+        enemy.health -= 10
+        if enemy.health <= 0:
+            print(f"Enemy destroyed at position ({enemy.pos[0]}, {enemy.pos[1]})")
 
     def draw(self, screen):
-        # Dessiner la tour (par exemple, un cercle)
-        pygame.draw.circle(screen, (0, 0, 255), (self.x, self.y), 20)
-
-        # Dessiner les projectiles
-        for projectile in self.projectiles:
-            projectile.draw(screen)
+        """ Dessine la tour sur l'écran """
+        screen.blit(self.tower_image, self.rect)

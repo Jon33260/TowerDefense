@@ -4,33 +4,35 @@ from map import WAYPOINTS  # Importer WAYPOINTS
 
 class Enemy:
     def __init__(self):
-        self.waypoints = WAYPOINTS
-        self.index = 0
-        self.pos = list(self.waypoints[0])  # Convertir en liste pour pouvoir modifier
-        self.speed = 2
-        self.health = 1000  # Santé de l'ennemi
-
-    def take_damage(self, damage):
-        """Infliger des dégâts à l'ennemi."""
-        self.health -= damage
-        if self.health <= 0:
-            self.health = 0  # Optionnel : pour éviter des valeurs négatives de santé
-            # Optionnel : ajouter ici la logique pour tuer l'ennemi, comme sa suppression de la liste
+        # Initialisation des propriétés de l'ennemi
+        self.health = 100
+        self.speed = 1
+        self.index = 0  # L'index du waypoint actuel
+        self.pos = WAYPOINTS[self.index]  # Position initiale de l'ennemi à partir des waypoints
+        self.image = pygame.image.load("assets/ennemies/gobelinPython.png").convert_alpha()  # Charger l'image de l'ennemi
+        self.image = pygame.transform.scale(self.image, (40, 40))  # Redimensionner l'image si nécessaire
 
     def update(self):
-        if self.index < len(self.waypoints) - 1:
-            target = self.waypoints[self.index + 1]
+        # L'ennemi se déplace le long des waypoints
+        if self.index < len(WAYPOINTS) - 1:
+            # Calcul de la direction vers le prochain waypoint
+            target = WAYPOINTS[self.index + 1]
             dx = target[0] - self.pos[0]
             dy = target[1] - self.pos[1]
-            distance = math.sqrt(dx**2 + dy**2)  # Calcul de la distance
+            distance = (dx**2 + dy**2) ** 0.5  # Calcul de la distance entre la position de l'ennemi et la cible
 
-            if distance < self.speed:
-                self.pos = list(target)  # Placer l'ennemi directement sur le waypoint
-                self.index += 1
+            # Déplacement de l'ennemi vers le prochain waypoint
+            if distance > self.speed:
+                dx /= distance
+                dy /= distance
+                self.pos = (self.pos[0] + dx * self.speed, self.pos[1] + dy * self.speed)  # Mise à jour de la position
             else:
-                direction = (dx / distance, dy / distance)
-                self.pos[0] += direction[0] * self.speed
-                self.pos[1] += direction[1] * self.speed
+                # Si l'ennemi est proche du waypoint, on passe au suivant
+                self.index += 1
+                if self.index < len(WAYPOINTS):  # Assure-toi qu'on ne dépasse pas le nombre de waypoints
+                    self.pos = WAYPOINTS[self.index]
 
     def draw(self, screen):
-        pygame.draw.circle(screen, (255, 0, 0), (int(self.pos[0]), int(self.pos[1])), 15)
+        # Afficher l'ennemi à sa position actuelle
+        enemy_rect = self.image.get_rect(center=self.pos)  # Positionner l'image de l'ennemi
+        screen.blit(self.image, enemy_rect)  # Dessiner l'ennemi à l'écran

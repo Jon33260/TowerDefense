@@ -47,7 +47,7 @@ class Game:
                 pygame.display.update()  # Met à jour l'écran
                 self.wait_for_restart()  # Attend une touche pour redémarrer
 
-             # Si toutes les vagues sont terminées et que la santé du château est encore là
+            # Si toutes les vagues sont terminées et que la santé du château est encore là
             if self.wave_number >= self.max_waves and len(self.enemies) == 0:
                 # Si la santé du château est encore positive, affiche le message de victoire
                 if self.castle_health > 0:
@@ -55,7 +55,7 @@ class Game:
                 else:
                     self.display_game_over("Partie terminée")  # Affiche la fin du jeu
                 pygame.display.update()
-                self.wait_for_restart()
+                self.wait_for_next_level()  # Attendre la touche pour passer au niveau suivant
 
     def update(self):
         # Gestion du spawn des ennemis selon les vagues
@@ -170,6 +170,30 @@ class Game:
         self.spawned_enemies = 0
         self.wave_timer = 0
         # Nous n'arrêtons pas le jeu ici, cela va reprendre sans fermer la fenêtre
+
+    def start_new_level(self):
+        """ Réinitialise le jeu pour le niveau suivant """
+        self.wave_number = 0  # Repartir à la première vague
+        self.spawned_enemies = 0
+        self.enemies.clear()  # Vide la liste des ennemis
+        self.towers.clear()  # Vide la liste des tours
+        self.castle_health = 100  # Réinitialise la santé du château
+        self.money = 150  # Donne un peu d'argent au joueur pour recommencer
+        self.max_waves += 1  # Augmente le nombre de vagues pour rendre le jeu plus difficile
+        self.enemies_per_wave += 2  # Ajoute plus d'ennemis par vague
+
+    def wait_for_next_level(self):
+        """ Attend la touche 'N' pour démarrer le niveau suivant """
+        waiting_for_next_level = True
+        while waiting_for_next_level:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    waiting_for_next_level = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_n:  # Si "N" est pressé
+                        self.start_new_level()  # Démarre le nouveau niveau
+                        waiting_for_next_level = False
 
     def spawn_enemy(self):
         """ Crée un ennemi et l'ajoute à la liste des ennemis avec un léger décalage """

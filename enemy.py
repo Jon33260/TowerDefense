@@ -5,8 +5,8 @@ from map import WAYPOINTS  # Importer WAYPOINTS
 class Enemy:
     def __init__(self):
         # Initialisation des propriétés de l'ennemi
-        self.health = 100
-        self.speed = 1
+        self.health = 1200
+        self.speed = 2
         self.index = 0  # L'index du waypoint actuel
         self.pos = WAYPOINTS[self.index]  # Position initiale de l'ennemi à partir des waypoints
         self.image = pygame.image.load("assets/ennemies/gobelinPython.png").convert_alpha()  # Charger l'image de l'ennemi
@@ -32,6 +32,8 @@ class Enemy:
                 if self.index < len(WAYPOINTS):  # Assure-toi qu'on ne dépasse pas le nombre de waypoints
                     self.pos = WAYPOINTS[self.index]
 
+    def take_damage(self, amount):
+        self.health -= amount  # 💥 Infliger les dégâts
     def draw(self, screen):
         # Afficher l'ennemi à sa position actuelle
         enemy_rect = self.image.get_rect(center=self.pos)  # Positionner l'image de l'ennemi

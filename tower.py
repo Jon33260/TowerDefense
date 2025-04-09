@@ -1,45 +1,49 @@
 import pygame
 import math
+from projectile import Projectile
 
 class Tower:
     def __init__(self, x, y):
-        self.x = x  # Position de la tour
+        self.x = x
         self.y = y
-        self.range = 100  # Portée de la tour
-        self.tower_image = pygame.image.load("assets/towers/tourPython.png").convert_alpha()  # Image de la tour
-        
-        # Obtenir la taille actuelle de l'image
-        width, height = self.tower_image.get_size()
-        
-        # Diviser la taille par 2
-        new_width = width // 2
-        new_height = height // 2
-        
-        # Redimensionner l'image de la tour
-        self.tower_image = pygame.transform.scale(self.tower_image, (new_width, new_height))
+        self.range = 150
+        self.fire_rate = 60  # Tir toutes les 60 frames
+        self.cooldown = 0
+        self.projectiles = []
 
-        # Définir le rect de la tour avec la nouvelle taille
-        self.rect = self.tower_image.get_rect(center=(self.x, self.y))  # Rectangle de la tour avec les nouvelles dimensions
-
-    def is_in_range(self, enemy):
-        """ Vérifie si l'ennemi est dans la portée de la tour """
-        dx = self.x - enemy.pos[0]
-        dy = self.y - enemy.pos[1]
-        distance = (dx**2 + dy**2) ** 0.5
-        return distance <= self.range
+        self.image = pygame.image.load("assets/towers/tourPython.png").convert_alpha()
+        self.image = pygame.transform.scale(self.image, (40, 40))  # Ajuste selon ta taille d'image
 
     def update(self, enemies):
-        """ Met à jour la logique de la tour (tirer sur les ennemis dans la portée) """
-        for enemy in enemies:
-            if self.is_in_range(enemy):
-                self.attack(enemy)
+        if self.cooldown > 0:
+            self.cooldown -= 1
 
-    def attack(self, enemy):
-        """ Attaque l'ennemi """
-        enemy.health -= 10
-        if enemy.health <= 0:
-            print(f"Enemy destroyed at position ({enemy.pos[0]}, {enemy.pos[1]})")
+        # Tir si possible
+        target = self.get_target(enemies)
+        if target and self.cooldown == 0:
+            self.projectiles.append(Projectile(self.x, self.y, target))
+            self.cooldown = self.fire_rate
+
+        # Mise à jour des projectiles
+        for projectile in self.projectiles[:]:
+            if projectile.update():  # Si le projectile touche
+                self.projectiles.remove(projectile)
+
+    def get_target(self, enemies):
+        """Retourne le premier ennemi dans la portée."""
+        for enemy in enemies:
+            dx = enemy.pos[0] - self.x
+            dy = enemy.pos[1] - self.y
+            distance = math.hypot(dx, dy)
+            if distance <= self.range:
+                return enemy
+        return None
 
     def draw(self, screen):
-        """ Dessine la tour sur l'écran """
-        screen.blit(self.tower_image, self.rect)
+        # Dessiner la tour
+        rect = self.image.get_rect(center=(self.x, self.y))
+        screen.blit(self.image, rect)
+
+        # Dessiner les projectiles
+        for projectile in self.projectiles:
+            projectile.draw(screen)

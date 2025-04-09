@@ -8,18 +8,25 @@ class Game:
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-        self.money = 100  # Argent initial
+        self.money = 150  # Argent initial
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
-        self.spawn_interval = 120  # frames
+        self.spawn_interval = 120  # intervalle entre les spawns d'ennemis
         self.castle_health = 100  # PV du château
         self.castle_image = pygame.image.load("assets/chateau.jpeg").convert_alpha()
         self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
+        # Gestion des vagues
+        self.wave_number = 0
+        self.max_waves = 3
+        self.enemies_per_wave = 5
+        self.wave_timer = 0  # Timer pour contrôler les vagues
+        self.spawned_enemies = 0  # Nombre d'ennemis créés dans la vague actuelle
+
     def run(self):
         while self.running:
-            self.clock.tick(60)
+            self.clock.tick(60)  # 60 FPS
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
@@ -32,20 +39,27 @@ class Game:
                             self.towers.append(Tower(pos[0], pos[1]))  # Crée une tour
                             self.money -= tower_cost  # Réduit l'argent du joueur
 
-            self.update()
-            self.draw()  # Appel de la méthode draw pour redessiner l'écran
+            self.update()  # Met à jour la logique du jeu
+            self.draw()    # Dessine tous les éléments à l'écran
 
             if self.castle_health <= 0:  # Condition de Game Over
-                self.display_game_over()  # Affiche la page Game Over
+                self.display_game_over("Game Over!")  # Affiche la page Game Over
                 pygame.display.update()  # Met à jour l'écran
                 self.wait_for_restart()  # Attend une touche pour redémarrer
 
+            # Si toutes les vagues sont terminées et que la santé du château est encore là
+            if self.wave_number >= self.max_waves and len(self.enemies) == 0:
+                self.display_game_over("Partie terminée")  # Affiche la fin du jeu
+                pygame.display.update()
+                self.wait_for_restart()
+
     def update(self):
-        # Gestion du spawn des ennemis
-        self.spawn_timer += 3
-        if self.spawn_timer >= self.spawn_interval:
-            self.spawn_timer = 1
-            self.enemies.append(Enemy())  # Crée un nouvel ennemi
+        # Gestion du spawn des ennemis selon les vagues
+        if self.wave_number < self.max_waves:
+            self.wave_timer += 1
+            if self.wave_timer >= self.spawn_interval and self.spawned_enemies < self.enemies_per_wave:
+                self.spawn_timer = 0
+                self.spawn_enemy()  # Crée un nouvel ennemi
 
         # Mettre à jour tous les ennemis
         for enemy in self.enemies:
@@ -65,11 +79,16 @@ class Game:
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
                 self.enemies.remove(enemy)
-                self.money += 20  # Récompense pour l'ennemi tué
+                self.money += 30  # Récompense pour l'ennemi tué
 
         # Mettre à jour toutes les tours
         for tower in self.towers:
             tower.update(self.enemies)
+
+        # Vérifier si tous les ennemis d'une vague ont été tués
+        if len(self.enemies) == 0 and self.spawned_enemies >= self.enemies_per_wave:
+            self.wave_number += 1  # Passer à la vague suivante
+            self.spawned_enemies = 0  # Réinitialiser le nombre d'ennemis créés pour la prochaine vague
 
     def draw(self):
         """ Dessine tous les éléments à l'écran """
@@ -98,6 +117,10 @@ class Game:
         castle_text = font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255))
         self.screen.blit(castle_text, (10, 50))
 
+        # Afficher la vague actuelle
+        wave_text = font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255))
+        self.screen.blit(wave_text, (10, 90))
+
         pygame.display.flip()
 
     def draw_path(self):
@@ -108,10 +131,10 @@ class Game:
                 WAYPOINTS[i], WAYPOINTS[i + 1], 20
             )
 
-    def display_game_over(self):
+    def display_game_over(self, message="Game Over"):
         """ Affiche l'écran de Game Over """
         font = pygame.font.SysFont(None, 72)
-        game_over_text = font.render("Game Over", True, (255, 0, 0))
+        game_over_text = font.render(message, True, (255, 0, 0))
         restart_text = pygame.font.SysFont(None, 36).render("Appuyez sur R pour redémarrer", True, (255, 255, 255))
 
         self.screen.fill((0, 0, 0))  # Fond noir
@@ -139,5 +162,17 @@ class Game:
         self.castle_health = 100
         self.towers = []
         self.enemies = []
-        self.spawn_timer = 0
+        self.wave_number = 0
+        self.spawned_enemies = 0
+        self.wave_timer = 0
         # Nous n'arrêtons pas le jeu ici, cela va reprendre sans fermer la fenêtre
+
+    def spawn_enemy(self):
+        """ Crée un ennemi et l'ajoute à la liste des ennemis avec un léger décalage """
+        if self.wave_number < self.max_waves:
+            # Calculer un léger décalage plus grand entre les ennemis sur l'axe X (par exemple, 60 pixels)
+            spawn_offset = self.spawned_enemies * 60  # Décalage de 60 pixels par ennemi
+            enemy = Enemy()
+            enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])  # Décaler la position initiale de l'ennemi
+            self.enemies.append(enemy)  # Ajouter l'ennemi à la liste
+            self.spawned_enemies += 1  # Incrémente le nombre d'ennemis créés dans la vague

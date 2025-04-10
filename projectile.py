@@ -7,7 +7,7 @@ class Projectile:
         self.y = y
         self.target = target
         self.speed = 5
-        self.damage = 60
+        self.damage = 100
 
     def update(self):
         # Calculer la direction vers l'ennemi

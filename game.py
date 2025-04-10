@@ -24,6 +24,9 @@ class Game:
         self.wave_timer = 0  # Timer pour contrôler les vagues
         self.spawned_enemies = 0  # Nombre d'ennemis créés dans la vague actuelle
 
+        # Initialisation de la vitesse des ennemis
+        self.enemy_speed = 2  # Vitesse initiale des ennemis
+
     def run(self):
         while self.running:
             self.clock.tick(60)  # 60 FPS
@@ -38,6 +41,10 @@ class Game:
                         if self.money >= tower_cost:
                             self.towers.append(Tower(pos[0], pos[1]))  # Crée une tour
                             self.money -= tower_cost  # Réduit l'argent du joueur
+
+                        # Vérifie si le bouton "Niveau Suivant" a été cliqué
+                        if self.check_next_level_button(pos):
+                            self.start_new_level()
 
             self.update()  # Met à jour la logique du jeu
             self.draw()    # Dessine tous les éléments à l'écran
@@ -55,7 +62,7 @@ class Game:
                 else:
                     self.display_game_over("Partie terminée")  # Affiche la fin du jeu
                 pygame.display.update()
-                self.wait_for_next_level()  # Attendre la touche pour passer au niveau suivant
+                self.display_next_level_button()  # Affiche le bouton pour passer au niveau suivant
 
     def update(self):
         # Gestion du spawn des ennemis selon les vagues
@@ -83,7 +90,7 @@ class Game:
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
                 self.enemies.remove(enemy)
-                self.money += 30  # Récompense pour l'ennemi tué
+                self.money += 50  # Récompense pour l'ennemi tué
 
         # Mettre à jour toutes les tours
         for tower in self.towers:
@@ -182,18 +189,25 @@ class Game:
         self.max_waves += 1  # Augmente le nombre de vagues pour rendre le jeu plus difficile
         self.enemies_per_wave += 2  # Ajoute plus d'ennemis par vague
 
-    def wait_for_next_level(self):
-        """ Attend la touche 'N' pour démarrer le niveau suivant """
-        waiting_for_next_level = True
-        while waiting_for_next_level:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                    waiting_for_next_level = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_n:  # Si "N" est pressé
-                        self.start_new_level()  # Démarre le nouveau niveau
-                        waiting_for_next_level = False
+        # Augmenter la vitesse des ennemis à chaque niveau
+        self.enemy_speed += 0.5  # Augmente la vitesse des ennemis à chaque niveau
+
+        # Réinitialiser les ennemis pour le niveau suivant avec la nouvelle vitesse
+        for enemy in self.enemies:
+            enemy.speed = self.enemy_speed
+
+    def display_next_level_button(self):
+        """ Affiche le bouton pour passer au niveau suivant """
+        font = pygame.font.SysFont(None, 48)
+        next_level_text = font.render("Passer au niveau suivant", True, (255, 255, 255))
+        button_rect = next_level_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 100))
+        pygame.draw.rect(self.screen, (0, 0, 255), button_rect)
+        self.screen.blit(next_level_text, button_rect.topleft)
+
+    def check_next_level_button(self, pos):
+        """ Vérifie si le bouton a été cliqué """
+        button_rect = pygame.Rect(self.screen.get_width() // 2 - 200, self.screen.get_height() // 2 + 50, 400, 60)
+        return button_rect.collidepoint(pos)
 
     def spawn_enemy(self):
         """ Crée un ennemi et l'ajoute à la liste des ennemis avec un léger décalage """
@@ -202,5 +216,6 @@ class Game:
             spawn_offset = self.spawned_enemies * 60  # Décalage de 60 pixels par ennemi
             enemy = Enemy()
             enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])  # Décaler la position initiale de l'ennemi
+            enemy.speed = self.enemy_speed  # Appliquer la vitesse des ennemis
             self.enemies.append(enemy)  # Ajouter l'ennemi à la liste
             self.spawned_enemies += 1  # Incrémente le nombre d'ennemis créés dans la vague

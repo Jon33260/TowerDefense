@@ -14,7 +14,7 @@ class Game:
         self.spawn_timer = 0
         self.spawn_interval = 120
         self.castle_health = 100
-        self.castle_image = pygame.image.load("assets/chateau.jpeg").convert_alpha()
+        self.castle_image = pygame.image.load("assets/chateau.png").convert_alpha()
         self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
         # Gestion des vagues

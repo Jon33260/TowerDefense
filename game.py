@@ -8,12 +8,12 @@ class Game:
         self.screen = screen
         self.running = True
         self.clock = pygame.time.Clock()
-        self.money = 150  # Argent initial
+        self.money = 150
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
-        self.spawn_interval = 120  # intervalle entre les spawns d'ennemis
-        self.castle_health = 100  # PV du château
+        self.spawn_interval = 120
+        self.castle_health = 100
         self.castle_image = pygame.image.load("assets/chateau.jpeg").convert_alpha()
         self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
@@ -21,106 +21,99 @@ class Game:
         self.wave_number = 0
         self.max_waves = 3
         self.enemies_per_wave = 5
-        self.wave_timer = 0  # Timer pour contrôler les vagues
-        self.spawned_enemies = 0  # Nombre d'ennemis créés dans la vague actuelle
+        self.wave_timer = 0
+        self.spawned_enemies = 0
+        self.enemy_speed = 2
 
-        # Initialisation de la vitesse des ennemis
-        self.enemy_speed = 2  # Vitesse initiale des ennemis
+        # État de jeu
+        self.in_game_over_screen = False
+        self.next_level_button_rect = None
 
     def run(self):
         while self.running:
-            self.clock.tick(60)  # 60 FPS
+            self.clock.tick(60)
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self.running = False
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:  # Clic gauche de la souris
-                        pos = pygame.mouse.get_pos()
-                        # Vérifie si on a assez d'argent pour acheter une tour
-                        tower_cost = 50  # Exemple de coût d'une tour
-                        if self.money >= tower_cost:
-                            self.towers.append(Tower(pos[0], pos[1]))  # Crée une tour
-                            self.money -= tower_cost  # Réduit l'argent du joueur
 
-                        # Vérifie si le bouton "Niveau Suivant" a été cliqué
+                if not self.in_game_over_screen:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        pos = pygame.mouse.get_pos()
+                        tower_cost = 50
+                        if self.money >= tower_cost:
+                            self.towers.append(Tower(pos[0], pos[1]))
+                            self.money -= tower_cost
+
                         if self.check_next_level_button(pos):
+                            self.in_game_over_screen = False
+                            self.start_new_level()
+                else:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if self.check_next_level_button(pygame.mouse.get_pos()):
+                            self.in_game_over_screen = False
                             self.start_new_level()
 
-            self.update()  # Met à jour la logique du jeu
-            self.draw()    # Dessine tous les éléments à l'écran
+            if not self.in_game_over_screen:
+                self.update()
+                self.draw()
 
-            if self.castle_health <= 0:  # Condition de Game Over
-                self.display_game_over("Game Over!")  # Affiche la page Game Over
-                pygame.display.update()  # Met à jour l'écran
-                self.wait_for_restart()  # Attend une touche pour redémarrer
-
-            # Si toutes les vagues sont terminées et que la santé du château est encore là
-            if self.wave_number >= self.max_waves and len(self.enemies) == 0:
-                # Si la santé du château est encore positive, affiche le message de victoire
-                if self.castle_health > 0:
-                    self.display_game_over("Félicitations, vous avez gagné !")  # Affiche la victoire
-                else:
-                    self.display_game_over("Partie terminée")  # Affiche la fin du jeu
+            if self.castle_health <= 0:
+                self.in_game_over_screen = True
+                self.display_game_over("Game Over!")
                 pygame.display.update()
-                self.display_next_level_button()  # Affiche le bouton pour passer au niveau suivant
+                self.wait_for_restart()
+
+            if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
+                self.in_game_over_screen = True
+                self.display_game_over("Félicitations, vous avez gagné !")
+                pygame.display.update()
 
     def update(self):
-        # Gestion du spawn des ennemis selon les vagues
         if self.wave_number < self.max_waves:
             self.wave_timer += 1
             if self.wave_timer >= self.spawn_interval and self.spawned_enemies < self.enemies_per_wave:
                 self.spawn_timer = 0
-                self.spawn_enemy()  # Crée un nouvel ennemi
+                self.spawn_enemy()
 
-        # Mettre à jour tous les ennemis
         for enemy in self.enemies:
             enemy.update()
 
-        # Vérifier si un ennemi atteint la fin du chemin
         for enemy in self.enemies[:]:
             dx = enemy.pos[0] - WAYPOINTS[-1][0]
             dy = enemy.pos[1] - WAYPOINTS[-1][1]
             distance = (dx**2 + dy**2) ** 0.5
 
-            if distance < 10:  # Rayon d'arrivée au château
+            if distance < 10:
                 self.enemies.remove(enemy)
-                self.castle_health -= 10  # Réduit la vie du château
+                self.castle_health -= 10
 
-        # Si un ennemi est tué, on gagne de l'argent
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
                 self.enemies.remove(enemy)
-                self.money += 50  # Récompense pour l'ennemi tué
+                self.money += 50
 
-        # Mettre à jour toutes les tours
         for tower in self.towers:
             tower.update(self.enemies)
 
-        # Vérifier si tous les ennemis d'une vague ont été tués
         if len(self.enemies) == 0 and self.spawned_enemies >= self.enemies_per_wave:
-            self.wave_number += 1  # Passer à la vague suivante
-            self.spawned_enemies = 0  # Réinitialiser le nombre d'ennemis créés pour la prochaine vague
+            self.wave_number += 1
+            self.spawned_enemies = 0
 
     def draw(self):
-        """ Dessine tous les éléments à l'écran """
-        self.screen.fill((34, 139, 34))  # fond vert
+        self.screen.fill((34, 139, 34))
         self.draw_path()
 
-        # Dessiner le château
         castle_pos = WAYPOINTS[-1]
         castle_rect = self.castle_image.get_rect(center=castle_pos)
         self.screen.blit(self.castle_image, castle_rect)
 
-        # Dessiner les tours
         for tower in self.towers:
-            tower.update(self.enemies)  # Mettre à jour la tour, y compris le cercle du rayon d'attaque
-            tower.draw(self.screen)     # Dessiner la tour elle-même
+            tower.update(self.enemies)
+            tower.draw(self.screen)
 
-        # Dessiner les ennemis
         for enemy in self.enemies:
             enemy.draw(self.screen)
 
-        # Afficher l'argent et les PV du château
         font = pygame.font.SysFont(None, 36)
         money_text = font.render(f"Argent: ${self.money}", True, (255, 255, 255))
         self.screen.blit(money_text, (10, 10))
@@ -128,14 +121,12 @@ class Game:
         castle_text = font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255))
         self.screen.blit(castle_text, (10, 50))
 
-        # Afficher la vague actuelle
         wave_text = font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255))
         self.screen.blit(wave_text, (10, 90))
 
         pygame.display.flip()
 
     def draw_path(self):
-        """ Dessine le chemin emprunté par les ennemis """
         for i in range(len(WAYPOINTS) - 1):
             pygame.draw.line(
                 self.screen, (200, 200, 0),
@@ -143,19 +134,26 @@ class Game:
             )
 
     def display_game_over(self, message="Game Over"):
-        """ Affiche l'écran de Game Over """
         font = pygame.font.SysFont(None, 72)
         game_over_text = font.render(message, True, (255, 0, 0))
         restart_text = pygame.font.SysFont(None, 36).render("Appuyez sur R pour redémarrer", True, (255, 255, 255))
 
-        self.screen.fill((0, 0, 0))  # Fond noir
-        self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, self.screen.get_height() // 2 - game_over_text.get_height() // 2))
-        self.screen.blit(restart_text, (self.screen.get_width() // 2 - restart_text.get_width() // 2, self.screen.get_height() // 2 + 50))
+        self.screen.fill((0, 0, 0))
+        self.screen.blit(game_over_text, (
+            self.screen.get_width() // 2 - game_over_text.get_width() // 2,
+            self.screen.get_height() // 2 - game_over_text.get_height() // 2
+        ))
+        self.screen.blit(restart_text, (
+            self.screen.get_width() // 2 - restart_text.get_width() // 2,
+            self.screen.get_height() // 2 + 50
+        ))
+
+        if message == "Félicitations, vous avez gagné !":
+            self.display_next_level_button()
 
         pygame.display.flip()
 
     def wait_for_restart(self):
-        """ Attend la touche 'R' pour redémarrer le jeu """
         waiting_for_restart = True
         while waiting_for_restart:
             for event in pygame.event.get():
@@ -163,12 +161,11 @@ class Game:
                     self.running = False
                     waiting_for_restart = False
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:  # Si "R" est pressé
-                        self.reset_game()  # Réinitialise le jeu
+                    if event.key == pygame.K_r:
+                        self.reset_game()
                         waiting_for_restart = False
 
     def reset_game(self):
-        """ Réinitialise le jeu pour le redémarrer """
         self.money = 100
         self.castle_health = 100
         self.towers = []
@@ -176,46 +173,47 @@ class Game:
         self.wave_number = 0
         self.spawned_enemies = 0
         self.wave_timer = 0
-        # Nous n'arrêtons pas le jeu ici, cela va reprendre sans fermer la fenêtre
+        self.in_game_over_screen = False
+        self.next_level_button_rect = None
 
     def start_new_level(self):
-        """ Réinitialise le jeu pour le niveau suivant """
-        self.wave_number = 0  # Repartir à la première vague
+        self.wave_number = 0
         self.spawned_enemies = 0
-        self.enemies.clear()  # Vide la liste des ennemis
-        self.towers.clear()  # Vide la liste des tours
-        self.castle_health = 100  # Réinitialise la santé du château
-        self.money = 150  # Donne un peu d'argent au joueur pour recommencer
-        self.max_waves += 1  # Augmente le nombre de vagues pour rendre le jeu plus difficile
-        self.enemies_per_wave += 2  # Ajoute plus d'ennemis par vague
-
-        # Augmenter la vitesse des ennemis à chaque niveau
-        self.enemy_speed += 0.5  # Augmente la vitesse des ennemis à chaque niveau
-
-        # Réinitialiser les ennemis pour le niveau suivant avec la nouvelle vitesse
-        for enemy in self.enemies:
-            enemy.speed = self.enemy_speed
+        self.enemies.clear()
+        self.towers.clear()
+        self.castle_health = 100
+        self.money = 150
+        self.max_waves += 1
+        self.enemies_per_wave += 2
+        self.enemy_speed += 0.5
 
     def display_next_level_button(self):
-        """ Affiche le bouton pour passer au niveau suivant """
         font = pygame.font.SysFont(None, 48)
         next_level_text = font.render("Passer au niveau suivant", True, (255, 255, 255))
-        button_rect = next_level_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 100))
-        pygame.draw.rect(self.screen, (0, 0, 255), button_rect)
-        self.screen.blit(next_level_text, button_rect.topleft)
+        self.next_level_button_rect = next_level_text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 120))
+        pygame.draw.rect(self.screen, (0, 0, 255), self.next_level_button_rect)
+        self.screen.blit(next_level_text, self.next_level_button_rect.topleft)
 
     def check_next_level_button(self, pos):
-        """ Vérifie si le bouton a été cliqué """
-        button_rect = pygame.Rect(self.screen.get_width() // 2 - 200, self.screen.get_height() // 2 + 50, 400, 60)
-        return button_rect.collidepoint(pos)
+        if self.next_level_button_rect:
+            return self.next_level_button_rect.collidepoint(pos)
+        return False
 
     def spawn_enemy(self):
-        """ Crée un ennemi et l'ajoute à la liste des ennemis avec un léger décalage """
         if self.wave_number < self.max_waves:
-            # Calculer un léger décalage plus grand entre les ennemis sur l'axe X (par exemple, 60 pixels)
-            spawn_offset = self.spawned_enemies * 60  # Décalage de 60 pixels par ennemi
-            enemy = Enemy()
-            enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])  # Décaler la position initiale de l'ennemi
-            enemy.speed = self.enemy_speed  # Appliquer la vitesse des ennemis
-            self.enemies.append(enemy)  # Ajouter l'ennemi à la liste
-            self.spawned_enemies += 1  # Incrémente le nombre d'ennemis créés dans la vague
+            spawn_offset = self.spawned_enemies * 60
+
+            # 🧠 Choix du type d'ennemi
+            if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
+                enemy_type = "boss"  # Boss final
+            elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
+                enemy_type = "mini-boss"  # Mini-boss en début de vague impaire
+            else:
+                enemy_type = "normal"
+
+            # 🐍 Création de l'ennemi avec type
+            enemy = Enemy(enemy_type)
+            enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])
+            enemy.speed = self.enemy_speed
+            self.enemies.append(enemy)
+            self.spawned_enemies += 1

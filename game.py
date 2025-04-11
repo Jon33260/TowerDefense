@@ -1,4 +1,5 @@
 import pygame
+import math
 from enemy import Enemy
 from map import WAYPOINTS
 from tower import Tower
@@ -17,6 +18,10 @@ class Game:
         self.castle_image = pygame.image.load("assets/chateau.png").convert_alpha()
         self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
+        # Charger l'image du chemin
+        self.road_image = pygame.image.load("assets/dalle.png").convert_alpha()
+        self.road_image = pygame.transform.scale(self.road_image, (40, 40))
+
         # Gestion des vagues
         self.wave_number = 0
         self.max_waves = 3
@@ -28,6 +33,11 @@ class Game:
         # État de jeu
         self.in_game_over_screen = False
         self.next_level_button_rect = None
+
+        # Charger et jouer la musique
+        pygame.mixer.music.load("assets/mario.mp3")  # Charger la musique
+        pygame.mixer.music.set_volume(0.1)  # Ajuster le volume (0.0 à 1.0)
+        pygame.mixer.music.play(-1, 0.0)  # Jouer la musique en boucle (-1 pour la boucle)
 
     def run(self):
         while self.running:
@@ -127,11 +137,27 @@ class Game:
         pygame.display.flip()
 
     def draw_path(self):
-        for i in range(len(WAYPOINTS) - 1):
-            pygame.draw.line(
-                self.screen, (200, 200, 0),
-                WAYPOINTS[i], WAYPOINTS[i + 1], 20
-            )
+     for i in range(len(WAYPOINTS) - 1):
+        start = WAYPOINTS[i]
+        end = WAYPOINTS[i + 1]
+        dx, dy = end[0] - start[0], end[1] - start[1]
+        distance = math.hypot(dx, dy)
+
+        if distance < 1:
+            continue
+
+        angle = math.atan2(dy, dx)
+        steps = int(distance // 20)  # Moins d'espacement = route plus fluide
+
+        for step in range(steps + 1):
+            t = step / steps
+            x = int(start[0] + dx * t)
+            y = int(start[1] + dy * t)
+            rotated_image = pygame.transform.rotate(self.road_image, -math.degrees(angle))
+            rect = rotated_image.get_rect(center=(x, y))
+            self.screen.blit(rotated_image, rect)
+
+
 
     def display_game_over(self, message="Game Over"):
         font = pygame.font.SysFont(None, 72)
@@ -203,15 +229,13 @@ class Game:
         if self.wave_number < self.max_waves:
             spawn_offset = self.spawned_enemies * 60
 
-            # 🧠 Choix du type d'ennemi
             if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
-                enemy_type = "boss"  # Boss final
+                enemy_type = "boss"
             elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
-                enemy_type = "mini-boss"  # Mini-boss en début de vague impaire
+                enemy_type = "mini-boss"
             else:
                 enemy_type = "normal"
 
-            # 🐍 Création de l'ennemi avec type
             enemy = Enemy(enemy_type)
             enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])
             enemy.speed = self.enemy_speed

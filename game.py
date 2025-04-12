@@ -1,8 +1,11 @@
 import pygame
 import math
+import os
 from enemy import Enemy
 from map import WAYPOINTS
 from tower import Tower
+
+HIGHSCORE_FILE = "highscores.txt"
 
 class Game:
     def __init__(self, screen):
@@ -10,7 +13,7 @@ class Game:
         self.running = True
         self.clock = pygame.time.Clock()
         self.money = 150
-        self.max_towers = 5  # Limite du nombre de tours
+        self.max_towers = 5
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
@@ -19,11 +22,9 @@ class Game:
         self.castle_image = pygame.image.load("assets/chateau.png").convert_alpha()
         self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
-        # Charger l'image du chemin
         self.road_image = pygame.image.load("assets/dalle.png").convert_alpha()
         self.road_image = pygame.transform.scale(self.road_image, (40, 40))
 
-        # Gestion des vagues
         self.wave_number = 0
         self.max_waves = 3
         self.enemies_per_wave = 6
@@ -31,62 +32,56 @@ class Game:
         self.spawned_enemies = 0
         self.enemy_speed = 2
 
-        # Variable pour le score
-        self.score = 0  # Initialiser le score à zéro
-
-        # État de jeu
+        self.score = 0
         self.in_game_over_screen = False
         self.next_level_button_rect = None
 
-        # Charger et jouer la musique
-        pygame.mixer.music.load("assets/mario.mp3")  # Charger la musique
-        pygame.mixer.music.set_volume(0.1)  # Ajuster le volume (0.0 à 1.0)
-        pygame.mixer.music.play(-1, 0.0)  # Jouer la musique en boucle (-1 pour la boucle)
+        pygame.mixer.music.load("assets/mario.mp3")
+        pygame.mixer.music.set_volume(0.1)
+        pygame.mixer.music.play(-1, 0.0)
 
     def run(self):
-     while self.running:
-        self.clock.tick(60)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                self.running = False
+        while self.running:
+            self.clock.tick(60)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+
+                if not self.in_game_over_screen:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        pos = pygame.mouse.get_pos()
+                        tower_cost = 50
+                        if self.money >= tower_cost and len(self.towers) < self.max_towers:
+                            self.towers.append(Tower(pos[0], pos[1]))
+                            self.money -= tower_cost
+                        elif len(self.towers) >= self.max_towers:
+                            print("Limite de tours atteinte !")
+
+                        if self.check_next_level_button(pos):
+                            self.in_game_over_screen = False
+                            self.start_new_level()
+                else:
+                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                        if self.check_next_level_button(pygame.mouse.get_pos()):
+                            self.in_game_over_screen = False
+                            self.start_new_level()
 
             if not self.in_game_over_screen:
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    pos = pygame.mouse.get_pos()
-                    tower_cost = 50
-                    if self.money >= tower_cost and len(self.towers) < self.max_towers:  # Vérifie la limite de tours
-                        self.towers.append(Tower(pos[0], pos[1]))
-                        self.money -= tower_cost
-                    elif len(self.towers) >= self.max_towers:
-                        print("Limite de tours atteinte !")  # Message ou autre action en cas de limite atteinte
+                self.update()
+                self.draw()
 
-                    # Vérifie si le bouton "niveau suivant" est cliqué
-                    if self.check_next_level_button(pos):
-                        self.in_game_over_screen = False
-                        self.start_new_level()  # Lancer le niveau suivant
+            if self.castle_health <= 0:
+                self.in_game_over_screen = True
+                self.save_score(self.score)
+                self.display_game_over("Game Over!")
+                pygame.display.update()
+                self.wait_for_restart()
 
-            else:  # Si le jeu est en état de game over
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    if self.check_next_level_button(pygame.mouse.get_pos()):
-                        self.in_game_over_screen = False
-                        self.start_new_level()  # Démarrer le niveau suivant après un clic sur le bouton
-
-        if not self.in_game_over_screen:
-            self.update()
-            self.draw()
-
-        # Condition de fin de partie
-        if self.castle_health <= 0:
-            self.in_game_over_screen = True
-            self.display_game_over("Game Over!")
-            pygame.display.update()
-            self.wait_for_restart()
-
-        # Condition de victoire
-        if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
-            self.in_game_over_screen = True
-            self.display_game_over("Félicitations, vous avez gagné !")
-            pygame.display.update()
+            if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
+                self.in_game_over_screen = True
+                self.save_score(self.score)
+                self.display_game_over("Félicitations, vous avez gagné !")
+                pygame.display.update()
 
     def update(self):
         if self.wave_number < self.max_waves:
@@ -110,8 +105,8 @@ class Game:
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
                 self.enemies.remove(enemy)
-                self.money += 50  # Récompense en argent
-                self.score += 10  # Ajouter des points pour tuer un ennemi
+                self.money += 50
+                self.score += 10
 
         for tower in self.towers:
             tower.update(self.enemies)
@@ -145,9 +140,8 @@ class Game:
         wave_text = font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255))
         self.screen.blit(wave_text, (10, 90))
 
-        # Afficher le score
         score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        self.screen.blit(score_text, (10, 130))  # Afficher le score en haut à gauche
+        self.screen.blit(score_text, (10, 130))
 
         pygame.display.flip()
 
@@ -157,13 +151,10 @@ class Game:
             end = WAYPOINTS[i + 1]
             dx, dy = end[0] - start[0], end[1] - start[1]
             distance = math.hypot(dx, dy)
-
             if distance < 1:
                 continue
-
             angle = math.atan2(dy, dx)
-            steps = int(distance // 20)  # Moins d'espacement = route plus fluide
-
+            steps = int(distance // 20)
             for step in range(steps + 1):
                 t = step / steps
                 x = int(start[0] + dx * t)
@@ -178,19 +169,31 @@ class Game:
         restart_text = pygame.font.SysFont(None, 36).render("Appuyez sur R pour redémarrer", True, (255, 255, 255))
 
         self.screen.fill((0, 0, 0))
-        self.screen.blit(game_over_text, (
-            self.screen.get_width() // 2 - game_over_text.get_width() // 2,
-            self.screen.get_height() // 2 - game_over_text.get_height() // 2
-        ))
-        self.screen.blit(restart_text, (
-            self.screen.get_width() // 2 - restart_text.get_width() // 2,
-            self.screen.get_height() // 2 + 50
-        ))
+        self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, self.screen.get_height() // 2 - game_over_text.get_height() // 2))
+        self.screen.blit(restart_text, (self.screen.get_width() // 2 - restart_text.get_width() // 2, self.screen.get_height() // 2 + 50))
 
         if message == "Félicitations, vous avez gagné !":
             self.display_next_level_button()
 
+        self.display_highscores()
+
         pygame.display.flip()
+
+    def display_highscores(self):
+        if not os.path.exists(HIGHSCORE_FILE):
+            return
+        try:
+            with open(HIGHSCORE_FILE, "r") as f:
+                scores = [int(line.strip()) for line in f if line.strip().isdigit()]
+        except:
+            scores = []
+
+        top_scores = sorted(scores, reverse=True)[:5]
+        font = pygame.font.SysFont(None, 36)
+        self.screen.blit(font.render("Top Scores:", True, (255, 255, 0)), (50, 300))
+        for i, score in enumerate(top_scores):
+            text = font.render(f"{i+1}. {score}", True, (255, 255, 255))
+            self.screen.blit(text, (50, 340 + i * 30))
 
     def wait_for_restart(self):
         waiting_for_restart = True
@@ -214,7 +217,7 @@ class Game:
         self.wave_timer = 0
         self.in_game_over_screen = False
         self.next_level_button_rect = None
-        self.score = 0  # Réinitialiser le score
+        self.score = 0
 
     def start_new_level(self):
         self.wave_number = 0
@@ -226,11 +229,7 @@ class Game:
         self.max_waves += 1
         self.enemies_per_wave += 2
         self.enemy_speed += 0.5
-
-        # Augmente le nombre de tours disponibles à chaque niveau
-        self.max_towers += 1  # Augmentation du nombre de tours possibles à chaque niveau
-
-        # Augmente la vie du château de +10 à chaque niveau
+        self.max_towers += 1
         self.castle_health += 10
 
     def display_next_level_button(self):
@@ -248,16 +247,21 @@ class Game:
     def spawn_enemy(self):
         if self.wave_number < self.max_waves:
             spawn_offset = self.spawned_enemies * 60
-
             if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
                 enemy_type = "boss"
             elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
                 enemy_type = "mini-boss"
             else:
                 enemy_type = "normal"
-
             enemy = Enemy(enemy_type)
             enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])
             enemy.speed = self.enemy_speed
             self.enemies.append(enemy)
             self.spawned_enemies += 1
+
+    def save_score(self, score):
+        try:
+            with open(HIGHSCORE_FILE, "a") as f:
+                f.write(f"{score}\n")
+        except Exception as e:
+            print("Erreur lors de la sauvegarde du score:", e)

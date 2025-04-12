@@ -245,19 +245,29 @@ class Game:
         return False
 
     def spawn_enemy(self):
-        if self.wave_number < self.max_waves:
-            spawn_offset = self.spawned_enemies * 60
-            if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
-                enemy_type = "boss"
-            elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
-                enemy_type = "mini-boss"
-            else:
-                enemy_type = "normal"
-            enemy = Enemy(enemy_type)
-            enemy.pos = (WAYPOINTS[0][0] + spawn_offset, WAYPOINTS[0][1])
-            enemy.speed = self.enemy_speed
-            self.enemies.append(enemy)
-            self.spawned_enemies += 1
+     if self.wave_number < self.max_waves:
+        # Décalage de l'ennemi
+        spawn_offset_x = self.spawned_enemies * 60  # Décalage initial
+        spawn_offset_y = 0  # Aucun décalage vertical pour l'instant
+
+        # Ajouter un léger décalage horizontal pour espacer les ennemis
+        spawn_offset_x += (self.spawned_enemies * 10)  # 10 pixels entre chaque ennemi
+
+        if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
+            enemy_type = "boss"
+        elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
+            enemy_type = "mini-boss"
+        else:
+            enemy_type = "normal"
+
+        # Créer l'ennemi avec le décalage ajusté
+        enemy = Enemy(enemy_type)
+        # Appliquer le décalage en x et y
+        enemy.pos = (WAYPOINTS[0][0] + spawn_offset_x, WAYPOINTS[0][1] + spawn_offset_y)
+        enemy.speed = self.enemy_speed
+        self.enemies.append(enemy)
+        self.spawned_enemies += 1
+
 
     def save_score(self, score):
         try:

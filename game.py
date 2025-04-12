@@ -26,10 +26,13 @@ class Game:
         # Gestion des vagues
         self.wave_number = 0
         self.max_waves = 3
-        self.enemies_per_wave = 7
+        self.enemies_per_wave = 6
         self.wave_timer = 0
         self.spawned_enemies = 0
         self.enemy_speed = 2
+
+        # Variable pour le score
+        self.score = 0  # Initialiser le score à zéro
 
         # État de jeu
         self.in_game_over_screen = False
@@ -41,14 +44,14 @@ class Game:
         pygame.mixer.music.play(-1, 0.0)  # Jouer la musique en boucle (-1 pour la boucle)
 
     def run(self):
-        while self.running:
-            self.clock.tick(60)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
+     while self.running:
+        self.clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
 
-                if not self.in_game_over_screen:
-                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if not self.in_game_over_screen:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     pos = pygame.mouse.get_pos()
                     tower_cost = 50
                     if self.money >= tower_cost and len(self.towers) < self.max_towers:  # Vérifie la limite de tours
@@ -57,29 +60,33 @@ class Game:
                     elif len(self.towers) >= self.max_towers:
                         print("Limite de tours atteinte !")  # Message ou autre action en cas de limite atteinte
 
-                        if self.check_next_level_button(pos):
-                            self.in_game_over_screen = False
-                            self.start_new_level()
-                else:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        if self.check_next_level_button(pygame.mouse.get_pos()):
-                            self.in_game_over_screen = False
-                            self.start_new_level()
+                    # Vérifie si le bouton "niveau suivant" est cliqué
+                    if self.check_next_level_button(pos):
+                        self.in_game_over_screen = False
+                        self.start_new_level()  # Lancer le niveau suivant
 
-            if not self.in_game_over_screen:
-                self.update()
-                self.draw()
+            else:  # Si le jeu est en état de game over
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self.check_next_level_button(pygame.mouse.get_pos()):
+                        self.in_game_over_screen = False
+                        self.start_new_level()  # Démarrer le niveau suivant après un clic sur le bouton
 
-            if self.castle_health <= 0:
-                self.in_game_over_screen = True
-                self.display_game_over("Game Over!")
-                pygame.display.update()
-                self.wait_for_restart()
+        if not self.in_game_over_screen:
+            self.update()
+            self.draw()
 
-            if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
-                self.in_game_over_screen = True
-                self.display_game_over("Félicitations, vous avez gagné !")
-                pygame.display.update()
+        # Condition de fin de partie
+        if self.castle_health <= 0:
+            self.in_game_over_screen = True
+            self.display_game_over("Game Over!")
+            pygame.display.update()
+            self.wait_for_restart()
+
+        # Condition de victoire
+        if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
+            self.in_game_over_screen = True
+            self.display_game_over("Félicitations, vous avez gagné !")
+            pygame.display.update()
 
     def update(self):
         if self.wave_number < self.max_waves:
@@ -103,7 +110,8 @@ class Game:
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
                 self.enemies.remove(enemy)
-                self.money += 50
+                self.money += 50  # Récompense en argent
+                self.score += 10  # Ajouter des points pour tuer un ennemi
 
         for tower in self.towers:
             tower.update(self.enemies)
@@ -137,30 +145,32 @@ class Game:
         wave_text = font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255))
         self.screen.blit(wave_text, (10, 90))
 
+        # Afficher le score
+        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        self.screen.blit(score_text, (10, 130))  # Afficher le score en haut à gauche
+
         pygame.display.flip()
 
     def draw_path(self):
-     for i in range(len(WAYPOINTS) - 1):
-        start = WAYPOINTS[i]
-        end = WAYPOINTS[i + 1]
-        dx, dy = end[0] - start[0], end[1] - start[1]
-        distance = math.hypot(dx, dy)
+        for i in range(len(WAYPOINTS) - 1):
+            start = WAYPOINTS[i]
+            end = WAYPOINTS[i + 1]
+            dx, dy = end[0] - start[0], end[1] - start[1]
+            distance = math.hypot(dx, dy)
 
-        if distance < 1:
-            continue
+            if distance < 1:
+                continue
 
-        angle = math.atan2(dy, dx)
-        steps = int(distance // 20)  # Moins d'espacement = route plus fluide
+            angle = math.atan2(dy, dx)
+            steps = int(distance // 20)  # Moins d'espacement = route plus fluide
 
-        for step in range(steps + 1):
-            t = step / steps
-            x = int(start[0] + dx * t)
-            y = int(start[1] + dy * t)
-            rotated_image = pygame.transform.rotate(self.road_image, -math.degrees(angle))
-            rect = rotated_image.get_rect(center=(x, y))
-            self.screen.blit(rotated_image, rect)
-
-
+            for step in range(steps + 1):
+                t = step / steps
+                x = int(start[0] + dx * t)
+                y = int(start[1] + dy * t)
+                rotated_image = pygame.transform.rotate(self.road_image, -math.degrees(angle))
+                rect = rotated_image.get_rect(center=(x, y))
+                self.screen.blit(rotated_image, rect)
 
     def display_game_over(self, message="Game Over"):
         font = pygame.font.SysFont(None, 72)
@@ -204,6 +214,7 @@ class Game:
         self.wave_timer = 0
         self.in_game_over_screen = False
         self.next_level_button_rect = None
+        self.score = 0  # Réinitialiser le score
 
     def start_new_level(self):
         self.wave_number = 0

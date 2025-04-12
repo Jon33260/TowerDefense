@@ -23,7 +23,7 @@ class Enemy:
 
     def set_stats_by_type(self):
         if self.type == "normal":
-            self.health = 1600
+            self.health = 1400
             self.speed = 3
             self.reward = 50
         elif self.type == "mini-boss":
@@ -92,7 +92,7 @@ class Enemy:
     @property
     def max_health(self):
         return {
-            "normal": 1600,
+            "normal": 1400,
             "mini-boss": 2500,
             "boss": 3500
         }.get(self.type, 100)

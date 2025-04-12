@@ -10,6 +10,7 @@ class Game:
         self.running = True
         self.clock = pygame.time.Clock()
         self.money = 150
+        self.max_towers = 5  # Limite du nombre de tours
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
@@ -25,7 +26,7 @@ class Game:
         # Gestion des vagues
         self.wave_number = 0
         self.max_waves = 3
-        self.enemies_per_wave = 5
+        self.enemies_per_wave = 7
         self.wave_timer = 0
         self.spawned_enemies = 0
         self.enemy_speed = 2
@@ -47,12 +48,14 @@ class Game:
                     self.running = False
 
                 if not self.in_game_over_screen:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        pos = pygame.mouse.get_pos()
-                        tower_cost = 50
-                        if self.money >= tower_cost:
-                            self.towers.append(Tower(pos[0], pos[1]))
-                            self.money -= tower_cost
+                 if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = pygame.mouse.get_pos()
+                    tower_cost = 50
+                    if self.money >= tower_cost and len(self.towers) < self.max_towers:  # Vérifie la limite de tours
+                        self.towers.append(Tower(pos[0], pos[1]))
+                        self.money -= tower_cost
+                    elif len(self.towers) >= self.max_towers:
+                        print("Limite de tours atteinte !")  # Message ou autre action en cas de limite atteinte
 
                         if self.check_next_level_button(pos):
                             self.in_game_over_screen = False
@@ -212,6 +215,12 @@ class Game:
         self.max_waves += 1
         self.enemies_per_wave += 2
         self.enemy_speed += 0.5
+
+        # Augmente le nombre de tours disponibles à chaque niveau
+        self.max_towers += 1  # Augmentation du nombre de tours possibles à chaque niveau
+
+        # Augmente la vie du château de +10 à chaque niveau
+        self.castle_health += 10
 
     def display_next_level_button(self):
         font = pygame.font.SysFont(None, 48)

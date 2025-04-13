@@ -30,7 +30,10 @@ class Game:
         self.enemies_per_wave = 6
         self.wave_timer = 0
         self.spawned_enemies = 0
-        self.enemy_speed = 2
+        self.enemy_speed = 3
+
+        self.last_spawn_time = pygame.time.get_ticks()
+        self.spawn_delay = 200  # Délai entre les spawns
 
         self.score = 0
         self.in_game_over_screen = False
@@ -84,11 +87,11 @@ class Game:
                 pygame.display.update()
 
     def update(self):
-        if self.wave_number < self.max_waves:
-            self.wave_timer += 1
-            if self.wave_timer >= self.spawn_interval and self.spawned_enemies < self.enemies_per_wave:
-                self.spawn_timer = 0
+        if self.wave_number < self.max_waves and self.spawned_enemies < self.enemies_per_wave:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.last_spawn_time >= self.spawn_delay:
                 self.spawn_enemy()
+                self.last_spawn_time = current_time
 
         for enemy in self.enemies:
             enemy.update()
@@ -131,17 +134,10 @@ class Game:
             enemy.draw(self.screen)
 
         font = pygame.font.SysFont(None, 36)
-        money_text = font.render(f"Argent: ${self.money}", True, (255, 255, 255))
-        self.screen.blit(money_text, (10, 10))
-
-        castle_text = font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255))
-        self.screen.blit(castle_text, (10, 50))
-
-        wave_text = font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255))
-        self.screen.blit(wave_text, (10, 90))
-
-        score_text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        self.screen.blit(score_text, (10, 130))
+        self.screen.blit(font.render(f"Argent: ${self.money}", True, (255, 255, 255)), (10, 10))
+        self.screen.blit(font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255)), (10, 50))
+        self.screen.blit(font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
+        self.screen.blit(font.render(f"Score: {self.score}", True, (255, 255, 255)), (10, 130))
 
         pygame.display.flip()
 
@@ -227,7 +223,7 @@ class Game:
         self.castle_health = 100
         self.money = 150
         self.max_waves += 1
-        self.enemies_per_wave += 2
+        self.enemies_per_wave += 4
         self.enemy_speed += 0.5
         self.max_towers += 1
         self.castle_health += 10
@@ -245,33 +241,29 @@ class Game:
         return False
 
     def spawn_enemy(self):
-     if self.wave_number < self.max_waves:
-        # Décalage de l'ennemi
-        spawn_offset_x = self.spawned_enemies * 60  # Décalage initial
-        spawn_offset_y = 0  # Aucun décalage vertical pour l'instant
+        """Génère un ennemi avec un ordre : normaux puis mini-boss puis boss uniquement à la dernière vague."""
+        if self.spawned_enemies < self.enemies_per_wave:
+            is_last_wave = self.wave_number == self.max_waves - 1
 
-        # Ajouter un léger décalage horizontal pour espacer les ennemis
-        spawn_offset_x += (self.spawned_enemies * 10)  # 10 pixels entre chaque ennemi
+            if is_last_wave:
+                # Mini-boss et Boss apparaissent seulement à la fin
+                if self.spawned_enemies == self.enemies_per_wave - 1:
+                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
+                elif self.spawned_enemies == self.enemies_per_wave - 2:
+                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
+                else:
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+            else:
+                # Sinon, on crée uniquement des ennemis normaux
+                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
 
-        if self.wave_number == self.max_waves - 1 and self.spawned_enemies == self.enemies_per_wave - 1:
-            enemy_type = "boss"
-        elif self.wave_number % 2 == 1 and self.spawned_enemies == 0:
-            enemy_type = "mini-boss"
-        else:
-            enemy_type = "normal"
-
-        # Créer l'ennemi avec le décalage ajusté
-        enemy = Enemy(enemy_type)
-        # Appliquer le décalage en x et y
-        enemy.pos = (WAYPOINTS[0][0] + spawn_offset_x, WAYPOINTS[0][1] + spawn_offset_y)
-        enemy.speed = self.enemy_speed
-        self.enemies.append(enemy)
-        self.spawned_enemies += 1
-
+            self.enemies.append(enemy)
+            self.spawned_enemies += 1
+            self.spawn_delay = pygame.time.get_ticks() % 500 + 700  # entre 700 et 1200ms
 
     def save_score(self, score):
         try:
             with open(HIGHSCORE_FILE, "a") as f:
-                f.write(f"{score}\n")
+                f.write(str(score) + "\n")
         except Exception as e:
-            print("Erreur lors de la sauvegarde du score:", e)
+            print(f"Erreur lors de la sauvegarde du score : {e}")

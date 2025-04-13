@@ -3,12 +3,24 @@ import math
 from map import WAYPOINTS
 
 class Enemy:
-    def __init__(self, enemy_type="normal"):
+    def __init__(self, enemy_type="normal", speed=None):
         self.type = enemy_type
         self.index = 0
-        # Conversion explicite en liste ici
-        self.pos = list(WAYPOINTS[self.index])  # Toujours convertir en liste
-        self.set_stats_by_type()
+        self.pos = list(WAYPOINTS[self.index])  # Conversion explicite en liste
+
+        if speed is not None:
+            self.speed = speed
+            self.health = self.max_health  # On utilise le max_health du type
+            self.reward = {
+                "normal": 50,
+                "mini-boss": 150,
+                "boss": 500
+            }.get(self.type, 50)
+        else:
+            self.set_stats_by_type()  # Sinon on définit les stats basées sur le type
+
+        # Debug : Vérifie si 'speed' et autres stats sont bien définis
+        print(f"[DEBUG] Vitesse de l'ennemi ({self.type}): {self.speed}, Santé: {self.health}, Récompense: {self.reward}")
 
         # Choix de l'image selon le type
         if self.type == "boss":
@@ -22,8 +34,9 @@ class Enemy:
         self.image = pygame.transform.scale(self.image, (40, 40))
 
     def set_stats_by_type(self):
+        """Définit les statistiques de l'ennemi en fonction de son type."""
         if self.type == "normal":
-            self.health = 1400
+            self.health = 1600
             self.speed = 3
             self.reward = 50
         elif self.type == "mini-boss":
@@ -35,13 +48,13 @@ class Enemy:
             self.speed = 1
             self.reward = 500
 
+        print(f"[DEBUG] Stats de l'ennemi - Type: {self.type}, Vitesse: {self.speed}, Santé: {self.health}")
+
     def update(self):
-        """Met à jour la position de l'ennemi selon les waypoints."""
         print(f"self.pos avant mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
 
-        # Assurez-vous que `self.pos` est bien une liste avant toute modification
         if not isinstance(self.pos, list):
-            self.pos = list(self.pos)  # Force conversion en liste si ce n'est pas déjà une liste
+            self.pos = list(self.pos)
 
         if self.index < len(WAYPOINTS) - 1:
             target = WAYPOINTS[self.index + 1]
@@ -52,42 +65,31 @@ class Enemy:
             if distance > self.speed:
                 dx /= distance
                 dy /= distance
-                # Modification de `self.pos` qui doit être une liste
                 self.pos[0] += dx * self.speed
                 self.pos[1] += dy * self.speed
             else:
                 self.index += 1
                 if self.index < len(WAYPOINTS):
-                    # Conversion explicite en liste à chaque changement d'index
-                    self.pos = list(WAYPOINTS[self.index])  # Conversion explicite en liste
+                    self.pos = list(WAYPOINTS[self.index])
                     print(f"self.pos après mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
 
     def take_damage(self, amount):
         self.health -= amount
 
     def draw(self, screen):
-        # Affichage de l'image de l'ennemi
         enemy_rect = self.image.get_rect(center=self.pos)
         screen.blit(self.image, enemy_rect)
 
-        # Paramètres de la barre de vie
-        bar_height = 5  # Hauteur fixe pour la barre de vie
-        max_bar_width = 30  # Largeur maximale de la barre de vie, ajustée selon l'ennemi
-        health_ratio = max(0, self.health / self.max_health)  # Ratio de vie restant
-
-        # Calcul de la largeur de la barre de vie en fonction de la santé
+        bar_height = 5
+        max_bar_width = 30
+        health_ratio = max(0, self.health / self.max_health)
         health_bar_width = max_bar_width * health_ratio
 
-        # Calcul de la position de la barre de vie (juste au-dessus de l'ennemi)
         health_bar = pygame.Rect(self.pos[0] - max_bar_width / 2, self.pos[1] - 30, health_bar_width, bar_height)
         border = pygame.Rect(self.pos[0] - max_bar_width / 2, self.pos[1] - 30, max_bar_width, bar_height)
 
-        # Dessiner la barre de vie (en rouge)
         pygame.draw.rect(screen, (255, 0, 0), health_bar)
-
-        # Dessiner le bord de la barre de vie (en blanc)
         pygame.draw.rect(screen, (255, 255, 255), border, 1)
-
 
     @property
     def max_health(self):

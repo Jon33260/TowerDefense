@@ -114,9 +114,13 @@ class Game:
         for tower in self.towers:
             tower.update(self.enemies)
 
+        # Increment wave number when enemies have been spawned
         if len(self.enemies) == 0 and self.spawned_enemies >= self.enemies_per_wave:
             self.wave_number += 1
             self.spawned_enemies = 0
+
+        if self.wave_number > self.max_waves:
+            self.wave_number = self.max_waves
 
     def draw(self):
         self.screen.fill((34, 139, 34))
@@ -136,7 +140,7 @@ class Game:
         font = pygame.font.SysFont(None, 36)
         self.screen.blit(font.render(f"Argent: ${self.money}", True, (255, 255, 255)), (10, 10))
         self.screen.blit(font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255)), (10, 50))
-        self.screen.blit(font.render(f"Vague: {self.wave_number}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
+        self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
         self.screen.blit(font.render(f"Score: {self.score}", True, (255, 255, 255)), (10, 130))
 
         pygame.display.flip()
@@ -241,12 +245,10 @@ class Game:
         return False
 
     def spawn_enemy(self):
-        """Génère un ennemi avec un ordre : normaux puis mini-boss puis boss uniquement à la dernière vague."""
         if self.spawned_enemies < self.enemies_per_wave:
             is_last_wave = self.wave_number == self.max_waves - 1
 
             if is_last_wave:
-                # Mini-boss et Boss apparaissent seulement à la fin
                 if self.spawned_enemies == self.enemies_per_wave - 1:
                     enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
                 elif self.spawned_enemies == self.enemies_per_wave - 2:
@@ -254,12 +256,12 @@ class Game:
                 else:
                     enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
             else:
-                # Sinon, on crée uniquement des ennemis normaux
                 enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
 
             self.enemies.append(enemy)
             self.spawned_enemies += 1
-            self.spawn_delay = pygame.time.get_ticks() % 500 + 700  # entre 700 et 1200ms
+            self.spawn_delay = 500  # délai fixe de 300ms entre chaque ennemi
+
 
     def save_score(self, score):
         try:

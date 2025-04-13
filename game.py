@@ -208,7 +208,7 @@ class Game:
                         waiting_for_restart = False
 
     def reset_game(self):
-        self.money = 100
+        self.money = 250
         self.castle_health = 100
         self.towers = []
         self.enemies = []
@@ -225,10 +225,10 @@ class Game:
         self.enemies.clear()
         self.towers.clear()
         self.castle_health = 100
-        self.money = 150
-        self.max_waves += 1
-        self.enemies_per_wave += 4
-        self.enemy_speed += 0.5
+        self.money = 200
+        self.max_waves += 0
+        self.enemies_per_wave += 2
+        self.enemy_speed += 0.1
         self.max_towers += 1
         self.castle_health += 10
 

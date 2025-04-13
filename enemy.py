@@ -37,11 +37,11 @@ class Enemy:
         """Définit les statistiques de l'ennemi en fonction de son type."""
         if self.type == "normal":
             self.health = 1600
-            self.speed = 3
+            self.speed = 2
             self.reward = 50
         elif self.type == "mini-boss":
             self.health = 3000
-            self.speed = 2
+            self.speed = 1
             self.reward = 150
         elif self.type == "boss":
             self.health = 4000

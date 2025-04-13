@@ -33,11 +33,15 @@ class Game:
         self.enemy_speed = 3
 
         self.last_spawn_time = pygame.time.get_ticks()
-        self.spawn_delay = 200  # Délai entre les spawns
+        self.spawn_delay = 200
 
         self.score = 0
         self.in_game_over_screen = False
         self.next_level_button_rect = None
+
+        self.warning_message = ""
+        self.warning_start_time = 0
+        self.warning_duration = 3000  # millisecondes (3 sec)
 
         pygame.mixer.music.load("assets/mario.mp3")
         pygame.mixer.music.set_volume(0.1)
@@ -100,7 +104,6 @@ class Game:
             dx = enemy.pos[0] - WAYPOINTS[-1][0]
             dy = enemy.pos[1] - WAYPOINTS[-1][1]
             distance = (dx**2 + dy**2) ** 0.5
-
             if distance < 10:
                 self.enemies.remove(enemy)
                 self.castle_health -= 10
@@ -114,10 +117,14 @@ class Game:
         for tower in self.towers:
             tower.update(self.enemies)
 
-        # Increment wave number when enemies have been spawned
         if len(self.enemies) == 0 and self.spawned_enemies >= self.enemies_per_wave:
             self.wave_number += 1
             self.spawned_enemies = 0
+
+            # Avertissement avant la dernière vague
+            if self.wave_number == self.max_waves - 1:
+                self.warning_message = "⚠️ Un puissant boss approche ! ⚠️"
+                self.warning_start_time = pygame.time.get_ticks()
 
         if self.wave_number > self.max_waves:
             self.wave_number = self.max_waves
@@ -142,6 +149,18 @@ class Game:
         self.screen.blit(font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255)), (10, 50))
         self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
         self.screen.blit(font.render(f"Score: {self.score}", True, (255, 255, 255)), (10, 130))
+
+        # Message d'alerte si présent
+        if self.warning_message:
+            current_time = pygame.time.get_ticks()
+            if current_time - self.warning_start_time < self.warning_duration:
+                font = pygame.font.SysFont(None, 48)
+                warning_text = font.render(self.warning_message, True, (255, 0, 0))
+                self.screen.blit(warning_text, (
+                    self.screen.get_width() // 2 - warning_text.get_width() // 2,
+                    self.screen.get_height() // 2 - 100))
+            else:
+                self.warning_message = ""
 
         pygame.display.flip()
 
@@ -245,29 +264,23 @@ class Game:
         return False
 
     def spawn_enemy(self):
-     if self.spawned_enemies < self.enemies_per_wave:
-        # Vérifier si c'est la dernière vague
-        if self.wave_number == self.max_waves - 1:  # Dernière vague
-            # Le boss est le dernier ennemi de cette vague
-            if self.spawned_enemies == self.enemies_per_wave - 1:
-                enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
+        if self.spawned_enemies < self.enemies_per_wave:
+            if self.wave_number == self.max_waves - 1:
+                if self.spawned_enemies == self.enemies_per_wave - 1:
+                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
+                else:
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+            elif self.wave_number == self.max_waves - 2:
+                if self.spawned_enemies == self.enemies_per_wave - 1:
+                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
+                else:
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
             else:
                 enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
-        elif self.wave_number == self.max_waves - 2:  # Avant-dernière vague
-            # Le mini-boss est le dernier ennemi de cette vague
-            if self.spawned_enemies == self.enemies_per_wave - 1:
-                enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
-            else:
-                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
-        else:
-            # Les vagues normales contiennent uniquement des ennemis "normaux"
-            enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
 
-        self.enemies.append(enemy)
-        self.spawned_enemies += 1
-        self.spawn_delay = 500  # délai fixe de 500ms entre chaque ennemi
-
-
+            self.enemies.append(enemy)
+            self.spawned_enemies += 1
+            self.spawn_delay = 500
 
     def save_score(self, score):
         try:

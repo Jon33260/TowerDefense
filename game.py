@@ -245,22 +245,28 @@ class Game:
         return False
 
     def spawn_enemy(self):
-        if self.spawned_enemies < self.enemies_per_wave:
-            is_last_wave = self.wave_number == self.max_waves - 1
-
-            if is_last_wave:
-                if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
-                elif self.spawned_enemies == self.enemies_per_wave - 2:
-                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
-                else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+     if self.spawned_enemies < self.enemies_per_wave:
+        # Vérifier si c'est la dernière vague
+        if self.wave_number == self.max_waves - 1:  # Dernière vague
+            # Le boss est le dernier ennemi de cette vague
+            if self.spawned_enemies == self.enemies_per_wave - 1:
+                enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
             else:
                 enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+        elif self.wave_number == self.max_waves - 2:  # Avant-dernière vague
+            # Le mini-boss est le dernier ennemi de cette vague
+            if self.spawned_enemies == self.enemies_per_wave - 1:
+                enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
+            else:
+                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+        else:
+            # Les vagues normales contiennent uniquement des ennemis "normaux"
+            enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
 
-            self.enemies.append(enemy)
-            self.spawned_enemies += 1
-            self.spawn_delay = 500  # délai fixe de 300ms entre chaque ennemi
+        self.enemies.append(enemy)
+        self.spawned_enemies += 1
+        self.spawn_delay = 500  # délai fixe de 500ms entre chaque ennemi
+
 
 
     def save_score(self, score):

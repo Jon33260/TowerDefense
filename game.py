@@ -14,7 +14,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.money = 150
         self.max_towers = 5
-        self.max_towers_limit = 10  # Limite absolue de tours
+        self.max_towers_limit = 10
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
@@ -46,7 +46,7 @@ class Game:
 
         self.lives = 3
 
-        self.heart_image = pygame.image.load("assets/coeur.png").convert_alpha()
+        self.heart_image = pygame.image.load("assets/coeur1.png").convert_alpha()
         self.heart_image = pygame.transform.scale(self.heart_image, (20, 20))
 
         pygame.mixer.music.load("assets/mario.mp3")
@@ -54,49 +54,63 @@ class Game:
         pygame.mixer.music.play(-1, 0.0)
 
         self.level = 1
+        self.paused = False  # <-- Ajout : état de pause
 
     def run(self):
-        while self.running:
-            self.clock.tick(60)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
+     while self.running:
+        self.clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
 
-                if not self.in_game_over_screen:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        pos = pygame.mouse.get_pos()
-                        tower_cost = 50
-                        if self.money >= tower_cost and len(self.towers) < self.max_towers:
-                            self.towers.append(Tower(pos[0], pos[1]))
-                            self.money -= tower_cost
-                        elif len(self.towers) >= self.max_towers:
-                            print("Limite de tours atteinte ! (max actuel :", self.max_towers, ")")
-                else:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        if self.check_next_level_button(pygame.mouse.get_pos()):
-                            self.in_game_over_screen = False
-                            self.start_new_level()
+            # ✅ Correction ici : on vérifie d'abord le type de l'événement
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.paused = not self.paused
+                    if self.paused:
+                        pygame.mixer.music.pause()
+                    else:
+                        pygame.mixer.music.unpause()
 
             if not self.in_game_over_screen:
-                self.update()
-                self.draw()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = pygame.mouse.get_pos()
+                    tower_cost = 50
+                    if self.money >= tower_cost and len(self.towers) < self.max_towers:
+                        self.towers.append(Tower(pos[0], pos[1]))
+                        self.money -= tower_cost
+                    elif len(self.towers) >= self.max_towers:
+                        print("Limite de tours atteinte ! (max actuel :", self.max_towers, ")")
+            else:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self.check_next_level_button(pygame.mouse.get_pos()):
+                        self.in_game_over_screen = False
+                        self.start_new_level()
 
-            if self.castle_health <= 0:
-                self.lives -= 1
-                self.in_game_over_screen = True
-                self.save_score(self.score)
-                self.display_game_over("Game Over!")
-                pygame.display.update()
-                self.wait_for_restart()
+        # ✅ La logique de mise en pause : on ne touche pas à la liste des tours
+        if not self.in_game_over_screen:
+            if not self.paused:
+                self.update()  # Met à jour les ennemis et autres éléments
+            self.draw()  # Dessine les éléments du jeu, y compris les tours
 
-            if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
-                self.in_game_over_screen = True
-                self.save_score(self.score)
-                if self.level >= 10:
-                    self.display_game_over("Félicitations, vous avez terminé le jeu !")
-                else:
-                    self.display_game_over("Félicitations, vous avez gagné !")
-                pygame.display.update()
+        if self.castle_health <= 0:
+            self.lives -= 1
+            self.in_game_over_screen = True
+            self.save_score(self.score)
+            self.display_game_over("Game Over!")
+            pygame.display.update()
+            self.wait_for_restart()
+
+        if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
+            self.in_game_over_screen = True
+            self.save_score(self.score)
+            if self.level >= 10:
+                self.display_game_over("Félicitations, vous avez terminé le jeu !")
+            else:
+                self.display_game_over("Félicitations, vous avez gagné !")
+            pygame.display.update()
+
+
 
     def update(self):
         if self.wave_number < self.max_waves and self.spawned_enemies < self.enemies_per_wave:
@@ -150,8 +164,10 @@ class Game:
         self.screen.blit(health_text, text_rect)
 
         for tower in self.towers:
-            tower.update(self.enemies)
-            tower.draw(self.screen)
+         if not self.paused:
+          tower.update(self.enemies)
+          tower.draw(self.screen)
+
 
         for enemy in self.enemies:
             enemy.draw(self.screen)
@@ -177,6 +193,13 @@ class Game:
                     self.screen.get_height() // 2 - 100))
             else:
                 self.warning_message = ""
+
+        if self.paused:
+            font = pygame.font.SysFont(None, 72)
+            pause_text = font.render("Pause", True, (255, 255, 255))
+            self.screen.blit(pause_text, (
+                self.screen.get_width() // 2 - pause_text.get_width() // 2,
+                self.screen.get_height() // 2 - pause_text.get_height() // 2))
 
         pygame.display.flip()
 
@@ -258,6 +281,7 @@ class Game:
         self.next_level_button_rect = None
         self.score = 0
         self.level = 1
+        self.paused = False
 
     def start_new_level(self):
         if self.level < 10:

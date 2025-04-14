@@ -20,13 +20,10 @@ class Game:
         self.spawn_interval = 120
         self.castle_health = 100
         self.castle_image = pygame.image.load("assets/chateau.png").convert_alpha()
-        self.castle_image = pygame.transform.scale(self.castle_image, (70, 70))
+        self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
 
         self.road_image = pygame.image.load("assets/dalle.png").convert_alpha()
         self.road_image = pygame.transform.scale(self.road_image, (40, 40))
-
-        self.heart_image = pygame.image.load("assets/coeur.png").convert_alpha()
-        self.heart_image = pygame.transform.scale(self.heart_image, (20, 20))
 
         self.wave_number = 0
         self.max_waves = 3
@@ -47,6 +44,9 @@ class Game:
         self.warning_duration = 3000
 
         self.lives = 3  # Nombre de vies totales
+
+        self.heart_image = pygame.image.load("assets/coeur.png").convert_alpha()
+        self.heart_image = pygame.transform.scale(self.heart_image, (20, 20))
 
         pygame.mixer.music.load("assets/mario.mp3")
         pygame.mixer.music.set_volume(0.1)
@@ -112,7 +112,7 @@ class Game:
             distance = (dx**2 + dy**2) ** 0.5
             if distance < 10:
                 self.enemies.remove(enemy)
-                self.castle_health -= 10  # ⚠️ Dégâts réduits à 10
+                self.castle_health -= 10
 
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
@@ -142,6 +142,12 @@ class Game:
         castle_rect = self.castle_image.get_rect(center=castle_pos)
         self.screen.blit(self.castle_image, castle_rect)
 
+        # Affichage des PV au-dessus du château
+        font = pygame.font.SysFont(None, 28)
+        health_text = font.render(f"{self.castle_health} PV", True, (255, 0, 0))
+        text_rect = health_text.get_rect(center=(castle_rect.centerx, castle_rect.top - 10))
+        self.screen.blit(health_text, text_rect)
+
         for tower in self.towers:
             tower.update(self.enemies)
             tower.draw(self.screen)
@@ -151,18 +157,14 @@ class Game:
 
         font = pygame.font.SysFont(None, 36)
         self.screen.blit(font.render(f"Argent: ${self.money}", True, (255, 255, 255)), (10, 10))
-        self.screen.blit(font.render(f"Château: {self.castle_health} PV", True, (255, 255, 255)), (10, 50))
-        self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
-        self.screen.blit(font.render(f"Score: {self.score}", True, (255, 255, 255)), (10, 130))
+        self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 50))
+        self.screen.blit(font.render(f"Tours : {len(self.towers)} / {self.max_towers}", True, (255, 255, 255)), (10, 90))
 
-        # Affiche les vies sous forme de cœurs centrés en haut de l'écran
-        heart_spacing = 40
-        total_width = self.lives * heart_spacing
-        start_x = (self.screen.get_width() - total_width) // 2
-        y = 10
 
+        # Affichage des cœurs (vies)
         for i in range(self.lives):
-            x = start_x + i * heart_spacing
+            x = self.screen.get_width() // 2 - (self.lives * 20) // 2 + i * 35
+            y = 10
             self.screen.blit(self.heart_image, (x, y))
 
         if self.warning_message:
@@ -254,7 +256,6 @@ class Game:
         self.in_game_over_screen = False
         self.next_level_button_rect = None
         self.score = 0
-        # Ne pas réinitialiser les vies ici
 
     def start_new_level(self):
         self.wave_number = 0

@@ -18,6 +18,7 @@ class Tower:
         self.level = 1
         self.base_damage = 10  # Dégâts de base
         self.damage = self.base_damage
+        self.energy_cost = 20  # Coût en énergie pour l'amélioration
 
     def update(self, enemies):
         if self.cooldown > 0:
@@ -59,3 +60,11 @@ class Tower:
         self.range += 30  # Augmenter la portée
         self.fire_rate -= 5  # Réduire la période de tir (amélioration de la rapidité)
         self.damage += 5  # Augmenter les dégâts
+
+    def upgrade(self, game):
+        """Améliorer la tour en utilisant l'énergie et l'argent"""
+        if game.energy >= self.energy_cost and game.money >= 50:
+            game.energy -= self.energy_cost  # Déduit l'énergie
+            game.money -= 50  # Déduit l'argent
+            self.damage += 5  # Augmente les dégâts
+            self.energy_cost += 10  # Augmente le coût en énergie pour les améliorations futures

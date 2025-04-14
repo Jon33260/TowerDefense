@@ -4,62 +4,58 @@ from map import WAYPOINTS
 
 class Enemy:
     def __init__(self, enemy_type="normal", speed=None):
-        self.type = enemy_type
+        self.enemy_type = enemy_type  # 👈 renommé ici
         self.index = 0
-        self.pos = list(WAYPOINTS[self.index])  # Conversion explicite en liste
+        self.pos = list(WAYPOINTS[self.index])
 
         if speed is not None:
             self.speed = speed
-            self.health = self.max_health  # On utilise le max_health du type
+            self.health = self.max_health
             self.reward = {
                 "normal": 50,
                 "mini-boss": 150,
                 "boss": 500
-            }.get(self.type, 50)
+            }.get(self.enemy_type, 50)
         else:
-            self.set_stats_by_type()  # Sinon on définit les stats basées sur le type
+            self.set_stats_by_type()
 
-        # Debug : Vérifie si 'speed' et autres stats sont bien définis
-        print(f"[DEBUG] Vitesse de l'ennemi ({self.type}): {self.speed}, Santé: {self.health}, Récompense: {self.reward}")
+        print(f"[DEBUG] Vitesse de l'ennemi ({self.enemy_type}): {self.speed}, Santé: {self.health}, Récompense: {self.reward}")
 
-        # Choix de l'image selon le type
-        if self.type == "boss":
+        # Image selon le type
+        if self.enemy_type == "boss":
             img_path = "assets/boss.png"
-        elif self.type == "mini-boss":
+        elif self.enemy_type == "mini-boss":
             img_path = "assets/ennemies/miniBoss.png"
         else:
             img_path = "assets/ennemies/gobelinPython.png"
 
         self.image = pygame.image.load(img_path).convert_alpha()
 
-        # Agrandir l'image des boss et mini-boss
-        if self.type == "boss":
-            self.image = pygame.transform.scale(self.image, (90, 90))  # Taille du boss agrandie
-        elif self.type == "mini-boss":
-            self.image = pygame.transform.scale(self.image, (70, 70))  # Taille du mini-boss agrandie
+        # Agrandir l'image selon le type
+        if self.enemy_type == "boss":
+            self.image = pygame.transform.scale(self.image, (90, 90))
+        elif self.enemy_type == "mini-boss":
+            self.image = pygame.transform.scale(self.image, (70, 70))
         else:
-            self.image = pygame.transform.scale(self.image, (40, 40))  # Taille par défaut pour les ennemis normaux
+            self.image = pygame.transform.scale(self.image, (40, 40))
 
     def set_stats_by_type(self):
-        """Définit les statistiques de l'ennemi en fonction de son type."""
-        if self.type == "normal":
+        if self.enemy_type == "normal":
             self.health = 1600
             self.speed = 2
             self.reward = 50
-        elif self.type == "mini-boss":
+        elif self.enemy_type == "mini-boss":
             self.health = 3000
             self.speed = 1
             self.reward = 150
-        elif self.type == "boss":
+        elif self.enemy_type == "boss":
             self.health = 4000
             self.speed = 1
             self.reward = 500
 
-        print(f"[DEBUG] Stats de l'ennemi - Type: {self.type}, Vitesse: {self.speed}, Santé: {self.health}")
+        print(f"[DEBUG] Stats de l'ennemi - Type: {self.enemy_type}, Vitesse: {self.speed}, Santé: {self.health}")
 
     def update(self):
-        print(f"self.pos avant mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
-
         if not isinstance(self.pos, list):
             self.pos = list(self.pos)
 
@@ -78,7 +74,6 @@ class Enemy:
                 self.index += 1
                 if self.index < len(WAYPOINTS):
                     self.pos = list(WAYPOINTS[self.index])
-                    print(f"self.pos après mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
 
     def take_damage(self, amount):
         self.health -= amount
@@ -104,4 +99,4 @@ class Enemy:
             "normal": 1400,
             "mini-boss": 2500,
             "boss": 3500
-        }.get(self.type, 100)
+        }.get(self.enemy_type, 100)

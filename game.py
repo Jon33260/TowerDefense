@@ -52,6 +52,8 @@ class Game:
         pygame.mixer.music.set_volume(0.1)
         pygame.mixer.music.play(-1, 0.0)
 
+        self.level = 1  # Niveau initial
+
     def run(self):
         while self.running:
             self.clock.tick(60)
@@ -160,6 +162,8 @@ class Game:
         self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 50))
         self.screen.blit(font.render(f"Tours : {len(self.towers)} / {self.max_towers}", True, (255, 255, 255)), (10, 90))
 
+        # Affichage du niveau
+        self.screen.blit(font.render(f"Niveau : {self.level}", True, (255, 255, 255)), (10, 130))  # Affichage du niveau
 
         # Affichage des cœurs (vies)
         for i in range(self.lives):
@@ -256,8 +260,10 @@ class Game:
         self.in_game_over_screen = False
         self.next_level_button_rect = None
         self.score = 0
+        self.level = 1  # Réinitialiser le niveau au début
 
     def start_new_level(self):
+        self.level += 1  # Incrémente le niveau à chaque nouveau niveau
         self.wave_number = 0
         self.spawned_enemies = 0
         self.enemies.clear()

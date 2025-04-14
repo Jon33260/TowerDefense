@@ -31,7 +31,14 @@ class Enemy:
             img_path = "assets/ennemies/gobelinPython.png"
 
         self.image = pygame.image.load(img_path).convert_alpha()
-        self.image = pygame.transform.scale(self.image, (40, 40))
+
+        # Agrandir l'image des boss et mini-boss
+        if self.type == "boss":
+            self.image = pygame.transform.scale(self.image, (90, 90))  # Taille du boss agrandie
+        elif self.type == "mini-boss":
+            self.image = pygame.transform.scale(self.image, (70, 70))  # Taille du mini-boss agrandie
+        else:
+            self.image = pygame.transform.scale(self.image, (40, 40))  # Taille par défaut pour les ennemis normaux
 
     def set_stats_by_type(self):
         """Définit les statistiques de l'ennemi en fonction de son type."""

@@ -20,10 +20,13 @@ class Game:
         self.spawn_interval = 120
         self.castle_health = 100
         self.castle_image = pygame.image.load("assets/chateau.png").convert_alpha()
-        self.castle_image = pygame.transform.scale(self.castle_image, (60, 60))
+        self.castle_image = pygame.transform.scale(self.castle_image, (70, 70))
 
         self.road_image = pygame.image.load("assets/dalle.png").convert_alpha()
         self.road_image = pygame.transform.scale(self.road_image, (40, 40))
+
+        self.heart_image = pygame.image.load("assets/coeur.png").convert_alpha()
+        self.heart_image = pygame.transform.scale(self.heart_image, (20, 20))
 
         self.wave_number = 0
         self.max_waves = 3
@@ -41,7 +44,9 @@ class Game:
 
         self.warning_message = ""
         self.warning_start_time = 0
-        self.warning_duration = 3000  # millisecondes (3 sec)
+        self.warning_duration = 3000
+
+        self.lives = 3  # Nombre de vies totales
 
         pygame.mixer.music.load("assets/mario.mp3")
         pygame.mixer.music.set_volume(0.1)
@@ -78,6 +83,7 @@ class Game:
                 self.draw()
 
             if self.castle_health <= 0:
+                self.lives -= 1  # Perd une vie à Game Over
                 self.in_game_over_screen = True
                 self.save_score(self.score)
                 self.display_game_over("Game Over!")
@@ -106,7 +112,7 @@ class Game:
             distance = (dx**2 + dy**2) ** 0.5
             if distance < 10:
                 self.enemies.remove(enemy)
-                self.castle_health -= 10
+                self.castle_health -= 10  # ⚠️ Dégâts réduits à 10
 
         for enemy in self.enemies[:]:
             if enemy.health <= 0:
@@ -121,7 +127,6 @@ class Game:
             self.wave_number += 1
             self.spawned_enemies = 0
 
-            # Avertissement avant la dernière vague
             if self.wave_number == self.max_waves - 1:
                 self.warning_message = "⚠️ Un puissant boss approche ! ⚠️"
                 self.warning_start_time = pygame.time.get_ticks()
@@ -150,7 +155,16 @@ class Game:
         self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 90))
         self.screen.blit(font.render(f"Score: {self.score}", True, (255, 255, 255)), (10, 130))
 
-        # Message d'alerte si présent
+        # Affiche les vies sous forme de cœurs centrés en haut de l'écran
+        heart_spacing = 40
+        total_width = self.lives * heart_spacing
+        start_x = (self.screen.get_width() - total_width) // 2
+        y = 10
+
+        for i in range(self.lives):
+            x = start_x + i * heart_spacing
+            self.screen.blit(self.heart_image, (x, y))
+
         if self.warning_message:
             current_time = pygame.time.get_ticks()
             if current_time - self.warning_start_time < self.warning_duration:
@@ -195,7 +209,6 @@ class Game:
             self.display_next_level_button()
 
         self.display_highscores()
-
         pygame.display.flip()
 
     def display_highscores(self):
@@ -223,7 +236,11 @@ class Game:
                     waiting_for_restart = False
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        self.reset_game()
+                        if self.lives > 0:
+                            self.reset_game()
+                        else:
+                            print("Plus de vies. Partie terminée.")
+                            self.running = False
                         waiting_for_restart = False
 
     def reset_game(self):
@@ -237,6 +254,7 @@ class Game:
         self.in_game_over_screen = False
         self.next_level_button_rect = None
         self.score = 0
+        # Ne pas réinitialiser les vies ici
 
     def start_new_level(self):
         self.wave_number = 0

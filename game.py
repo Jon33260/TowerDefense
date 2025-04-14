@@ -14,6 +14,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.money = 150
         self.max_towers = 5
+        self.max_towers_limit = 10  # Limite absolue de tours
         self.towers = []
         self.enemies = []
         self.spawn_timer = 0
@@ -69,11 +70,7 @@ class Game:
                             self.towers.append(Tower(pos[0], pos[1]))
                             self.money -= tower_cost
                         elif len(self.towers) >= self.max_towers:
-                            print("Limite de tours atteinte !")
-
-                        if self.check_next_level_button(pos):
-                            self.in_game_over_screen = False
-                            self.start_new_level()
+                            print("Limite de tours atteinte ! (max actuel :", self.max_towers, ")")
                 else:
                     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                         if self.check_next_level_button(pygame.mouse.get_pos()):
@@ -271,11 +268,10 @@ class Game:
             self.towers.clear()
             self.castle_health = 100
             self.money = 200
-            self.max_waves += 0
             self.enemies_per_wave += 2
             self.enemy_speed += 0.1
-            self.max_towers += 1
-            self.castle_health += 10
+            if self.max_towers < self.max_towers_limit:
+                self.max_towers += 1
         else:
             self.in_game_over_screen = True
             self.save_score(self.score)

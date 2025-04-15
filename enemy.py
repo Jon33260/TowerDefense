@@ -3,11 +3,11 @@ import math
 from map import WAYPOINTS, WAYPOINTS_NIVEAU2
 
 class Enemy:
-    def __init__(self, enemy_type="normal", speed=None, waypoints=None): #
-        self.waypoints = waypoints if waypoints is not None else WAYPOINTS #
+    def __init__(self, enemy_type="normal", speed=None, waypoints=None): # rajout de waypoints=None 
+        self.waypoints = waypoints if waypoints is not None else WAYPOINTS # rajout de cette ligne en plus
         self.type = enemy_type
         self.index = 0
-        self.pos = list(self.waypoints[self.index])  # Conversion explicite en liste #WAYPOINTS
+        self.pos = list(self.waypoints[self.index])  # Conversion explicite en liste #WAYPOINTS modif initial
 
         if speed is not None:
             self.speed = speed
@@ -48,11 +48,11 @@ class Enemy:
             self.speed = 2
             self.reward = 50
         elif self.type == "mini-boss":
-            self.health = 3000
+            self.health = 2500
             self.speed = 1
             self.reward = 150
         elif self.type == "boss":
-            self.health = 4000
+            self.health = 3000
             self.speed = 1
             self.reward = 500
 
@@ -64,8 +64,8 @@ class Enemy:
         if not isinstance(self.pos, list):
             self.pos = list(self.pos)
 
-        if self.index < len(self.waypoints) - 1: #WAYPOINTS
-            target = self.waypoints[self.index + 1] #WAYPOINTS
+        if self.index < len(self.waypoints) - 1: #WAYPOINTS modif initial
+            target = self.waypoints[self.index + 1] #WAYPOINTS modif initial
             dx = target[0] - self.pos[0]
             dy = target[1] - self.pos[1]
             distance = math.hypot(dx, dy)
@@ -77,8 +77,8 @@ class Enemy:
                 self.pos[1] += dy * self.speed
             else:
                 self.index += 1
-                if self.index < len(self.waypoints): #WAYPOINTS
-                    self.pos = list(self.waypoints[self.index]) #WAYPOINTS
+                if self.index < len(self.waypoints): #WAYPOINTS modif initial
+                    self.pos = list(self.waypoints[self.index]) #WAYPOINTS modif initial
                     print(f"self.pos après mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
 
     def take_damage(self, amount):

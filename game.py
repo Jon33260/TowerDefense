@@ -127,8 +127,8 @@ class Game:
             enemy.update()
 
         for enemy in self.enemies[:]:
-            dx = enemy.pos[0] - self.waypoints[-1][0] #WAYPOINTS
-            dy = enemy.pos[1] - self.waypoints[-1][1] #WAYPOINTS
+            dx = enemy.pos[0] - self.waypoints[-1][0] #WAYPOINTS modif initial
+            dy = enemy.pos[1] - self.waypoints[-1][1] #WAYPOINTS modif initial
             distance = (dx**2 + dy**2) ** 0.5
             if distance < 10:
                 self.enemies.remove(enemy)
@@ -158,7 +158,7 @@ class Game:
         self.screen.fill((34, 139, 34))
         self.draw_path()
 
-        castle_pos = self.waypoints[-1] #WAYPOINTS
+        castle_pos = self.waypoints[-1] #WAYPOINTS modif initial
         castle_rect = self.castle_image.get_rect(center=castle_pos)
         self.screen.blit(self.castle_image, castle_rect)
 
@@ -208,9 +208,9 @@ class Game:
         pygame.display.flip()
 
     def draw_path(self):
-        for i in range(len(self.waypoints) - 1): #WAYPOINTS
-            start = self.waypoints[i] #WAYPOINTS
-            end = self.waypoints[i + 1] #WAYPOINTS
+        for i in range(len(self.waypoints) - 1): #WAYPOINTS modif initial
+            start = self.waypoints[i] #WAYPOINTS modif initial
+            end = self.waypoints[i + 1] #WAYPOINTS modif initial
             dx, dy = end[0] - start[0], end[1] - start[1]
             distance = math.hypot(dx, dy)
             if distance < 1:
@@ -302,11 +302,17 @@ class Game:
             if self.max_towers < self.max_towers_limit:
                 self.max_towers += 1
             
-                        # Ajout de la condition pour le choix de la map 2
+                        # Ajout de la condition pour le choix de la map 2 au niveau 2
             if self.level == 2:
                 self.waypoints = WAYPOINTS_NIVEAU2
             else:
                 self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
+
+            #               # Ajout de la condition pour le choix de la map 3 au niveau 3
+            # if self.level == 3:
+            #     self.waypoints = WAYPOINTS_NIVEAU3
+            # else:
+            #     self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
 
 
         else:
@@ -330,17 +336,16 @@ class Game:
         if self.spawned_enemies < self.enemies_per_wave:
             if self.wave_number == self.max_waves - 1:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed, waypoints=self.waypoints) #
+                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             elif self.wave_number == self.max_waves - 2:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed, waypoints=self.waypoints) #
+                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             else:
-                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
-
+                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             self.enemies.append(enemy)
             self.spawned_enemies += 1
             self.spawn_delay = 500

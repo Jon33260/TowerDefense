@@ -45,3 +45,25 @@ WAYPOINTS_NIVEAU3 = [
     (750, 550)    # Sortie à droite
 ]
 
+# Map pour le niveau 4 (niveau plus difficile)
+WAYPOINTS_NIVEAU4 = [
+    (0, 350),      # Départ à gauche, position médiane
+    (100, 350),    # Avance vers la droite
+    (100, 200),    # Monte brusquement pour créer un virage serré
+    (200, 200),    # Avance avec la trajectoire haute
+    (200, 450),    # Descente rapide pour changer de direction
+    (350, 450),    # Poursuite vers la droite, zone basse
+    (350, 150),    # Remontée abrupte pour forcer un changement d'angle
+    (500, 150),    # Avance sur la partie haute
+    (500, 400),    # Descente pour revenir vers une zone centrale
+    (650, 400),    # Continue à droite
+    (650, 250),    # Remonte brièvement pour créer un virage
+    (750, 250),    # Avance encore vers la droite
+    (750, 500),    # Descente marquée pour complexifier le parcours
+    (600, 500),    # Retour en arrière sur une partie pour multiplier les virages
+    (600, 600),    # Descente finale pour un virage serré
+    (400, 600),    # Remontée en direction de la gauche
+    (400, 500),    # Petit virage final
+    (0, 500)       # Arrivée finale à gauche
+]
+

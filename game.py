@@ -2,7 +2,7 @@ import pygame
 import math
 import os
 from enemy import Enemy
-from map import WAYPOINTS, WAYPOINTS_NIVEAU2
+from map import WAYPOINTS, WAYPOINTS_NIVEAU2, WAYPOINTS_NIVEAU3, WAYPOINTS_NIVEAU4
 from tower import Tower
 
 HIGHSCORE_FILE = "highscores.txt"
@@ -306,14 +306,20 @@ class Game:
             if self.level == 2:
                 self.waypoints = WAYPOINTS_NIVEAU2
             else:
-                self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
+                self.waypoints = WAYPOINTS_NIVEAU3  # Ou une autre map, si vous en avez*
 
+                        # Ajout de la condition pour le choix de la map 4 au niveau 4
+            if self.level == 4:
+                self.waypoints = WAYPOINTS_NIVEAU4
+            else:
+                self.waypoints = WAYPOINTS_NIVEAU3
+# -------------------------------------------------------------------------------------------------
             #               # Ajout de la condition pour le choix de la map 3 au niveau 3
             # if self.level == 3:
             #     self.waypoints = WAYPOINTS_NIVEAU3
             # else:
             #     self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
-
+# -------------------------------------------------------------------------------------------------
 
         else:
             self.in_game_over_screen = True

@@ -1,6 +1,6 @@
 import pygame
 import math
-from map import WAYPOINTS, WAYPOINTS_NIVEAU2
+from map import WAYPOINTS, WAYPOINTS_NIVEAU2, WAYPOINTS_NIVEAU3
 
 class Enemy:
     def __init__(self, enemy_type="normal", speed=None, waypoints=None): # rajout de waypoints=None 
@@ -13,7 +13,7 @@ class Enemy:
             self.speed = speed
             self.health = self.max_health  # On utilise le max_health du type
             self.reward = {
-                "normal": 50,
+                "normal": 10,
                 "mini-boss": 150,
                 "boss": 500
             }.get(self.type, 50)
@@ -44,7 +44,7 @@ class Enemy:
     def set_stats_by_type(self):
         """Définit les statistiques de l'ennemi en fonction de son type."""
         if self.type == "normal":
-            self.health = 1600
+            self.health = 10
             self.speed = 2
             self.reward = 50
         elif self.type == "mini-boss":
@@ -102,7 +102,7 @@ class Enemy:
     @property
     def max_health(self):
         return {
-            "normal": 1400,
+            "normal": 10,
             "mini-boss": 2500,
             "boss": 3500
         }.get(self.type, 100)

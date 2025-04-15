@@ -1,12 +1,13 @@
 import pygame
 import math
-from map import WAYPOINTS
+from map import WAYPOINTS, WAYPOINTS_NIVEAU2
 
 class Enemy:
-    def __init__(self, enemy_type="normal", speed=None):
+    def __init__(self, enemy_type="normal", speed=None, waypoints=None): #
+        self.waypoints = waypoints if waypoints is not None else WAYPOINTS #
         self.type = enemy_type
         self.index = 0
-        self.pos = list(WAYPOINTS[self.index])  # Conversion explicite en liste
+        self.pos = list(self.waypoints[self.index])  # Conversion explicite en liste #WAYPOINTS
 
         if speed is not None:
             self.speed = speed
@@ -63,8 +64,8 @@ class Enemy:
         if not isinstance(self.pos, list):
             self.pos = list(self.pos)
 
-        if self.index < len(WAYPOINTS) - 1:
-            target = WAYPOINTS[self.index + 1]
+        if self.index < len(self.waypoints) - 1: #WAYPOINTS
+            target = self.waypoints[self.index + 1] #WAYPOINTS
             dx = target[0] - self.pos[0]
             dy = target[1] - self.pos[1]
             distance = math.hypot(dx, dy)
@@ -76,8 +77,8 @@ class Enemy:
                 self.pos[1] += dy * self.speed
             else:
                 self.index += 1
-                if self.index < len(WAYPOINTS):
-                    self.pos = list(WAYPOINTS[self.index])
+                if self.index < len(self.waypoints): #WAYPOINTS
+                    self.pos = list(self.waypoints[self.index]) #WAYPOINTS
                     print(f"self.pos après mise à jour: {self.pos} (type: {type(self.pos)})")  # Debug
 
     def take_damage(self, amount):

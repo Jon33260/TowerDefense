@@ -2,7 +2,7 @@ import pygame
 import math
 import os
 from enemy import Enemy
-from map import WAYPOINTS
+from map import WAYPOINTS, WAYPOINTS_NIVEAU2
 from tower import Tower
 
 HIGHSCORE_FILE = "highscores.txt"
@@ -55,6 +55,8 @@ class Game:
 
         self.level = 1
         self.paused = False  # <-- Ajout : état de pause
+        self.waypoints = WAYPOINTS  # <-- Ajout : points de cheminement par défaut
+
 
     def run(self):
      while self.running:
@@ -112,6 +114,8 @@ class Game:
 
 
 
+
+
     def update(self):
         if self.wave_number < self.max_waves and self.spawned_enemies < self.enemies_per_wave:
             current_time = pygame.time.get_ticks()
@@ -123,8 +127,8 @@ class Game:
             enemy.update()
 
         for enemy in self.enemies[:]:
-            dx = enemy.pos[0] - WAYPOINTS[-1][0]
-            dy = enemy.pos[1] - WAYPOINTS[-1][1]
+            dx = enemy.pos[0] - self.waypoints[-1][0] #WAYPOINTS
+            dy = enemy.pos[1] - self.waypoints[-1][1] #WAYPOINTS
             distance = (dx**2 + dy**2) ** 0.5
             if distance < 10:
                 self.enemies.remove(enemy)
@@ -154,7 +158,7 @@ class Game:
         self.screen.fill((34, 139, 34))
         self.draw_path()
 
-        castle_pos = WAYPOINTS[-1]
+        castle_pos = self.waypoints[-1] #WAYPOINTS
         castle_rect = self.castle_image.get_rect(center=castle_pos)
         self.screen.blit(self.castle_image, castle_rect)
 
@@ -204,9 +208,9 @@ class Game:
         pygame.display.flip()
 
     def draw_path(self):
-        for i in range(len(WAYPOINTS) - 1):
-            start = WAYPOINTS[i]
-            end = WAYPOINTS[i + 1]
+        for i in range(len(self.waypoints) - 1): #WAYPOINTS
+            start = self.waypoints[i] #WAYPOINTS
+            end = self.waypoints[i + 1] #WAYPOINTS
             dx, dy = end[0] - start[0], end[1] - start[1]
             distance = math.hypot(dx, dy)
             if distance < 1:
@@ -220,6 +224,7 @@ class Game:
                 rotated_image = pygame.transform.rotate(self.road_image, -math.degrees(angle))
                 rect = rotated_image.get_rect(center=(x, y))
                 self.screen.blit(rotated_image, rect)
+    
 
     def display_game_over(self, message="Game Over"):
         font = pygame.font.SysFont(None, 72)
@@ -296,6 +301,14 @@ class Game:
             self.enemy_speed += 0.1
             if self.max_towers < self.max_towers_limit:
                 self.max_towers += 1
+            
+                        # Ajout de la condition pour le choix de la map 2
+            if self.level == 2:
+                self.waypoints = WAYPOINTS_NIVEAU2
+            else:
+                self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
+
+
         else:
             self.in_game_over_screen = True
             self.save_score(self.score)
@@ -317,16 +330,16 @@ class Game:
         if self.spawned_enemies < self.enemies_per_wave:
             if self.wave_number == self.max_waves - 1:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed, waypoints=self.waypoints) #
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
             elif self.wave_number == self.max_waves - 2:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed, waypoints=self.waypoints) #
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
             else:
-                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) #
 
             self.enemies.append(enemy)
             self.spawned_enemies += 1

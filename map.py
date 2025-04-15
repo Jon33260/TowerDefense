@@ -12,3 +12,20 @@ WAYPOINTS = [
     (250, 550),
     (750, 550),
 ]
+
+# Nouvelle map pour le niveau 2
+WAYPOINTS_NIVEAU2 = [
+    (0, 200),    # Point de départ en bord gauche, position verticale médiane
+    (150, 200),  # Avance vers la droite
+    (150, 50),   # Remontée vers le haut
+    (600, 50),   # Longue traversée sur le haut de l'écran
+    (600, 200),  # Descente pour créer un virage
+    (750, 200),  # Poursuite vers la droite jusqu'au bord
+    (750, 400),  # Descente marquée côté droit
+    (500, 400),  # Retour vers la gauche pour varier le parcours
+    (500, 550),  # Nouvelle descente en bas
+    (250, 550),  # Remontée vers la gauche sur le bas de l'écran
+    (250, 350),  # Petit déplacement vertical pour créer un virage
+    (0, 350),    # Retour final vers la gauche avant de sortir (ou boucler)
+]
+

@@ -2,7 +2,7 @@ import pygame
 import math
 import os
 from enemy import Enemy
-from map import WAYPOINTS
+from map import WAYPOINTS, WAYPOINTS_NIVEAU2, WAYPOINTS_NIVEAU3, WAYPOINTS_NIVEAU4
 from tower import Tower
 
 HIGHSCORE_FILE = "highscores.txt"
@@ -44,10 +44,8 @@ class Game:
         self.warning_start_time = 0
         self.warning_duration = 3000
 
-        self.energy = 0
-        self.max_energy = 100
-
         self.lives = 3
+
         self.heart_image = pygame.image.load("assets/coeur1.png").convert_alpha()
         self.heart_image = pygame.transform.scale(self.heart_image, (20, 20))
 
@@ -56,57 +54,67 @@ class Game:
         pygame.mixer.music.play(-1, 0.0)
 
         self.level = 1
-        self.paused = False
+        self.paused = False  # <-- Ajout : état de pause
+        self.waypoints = WAYPOINTS  # <-- Ajout : points de cheminement par défaut
+
 
     def run(self):
-        while self.running:
-            self.clock.tick(60)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_p:
-                        self.paused = not self.paused
-                        if self.paused:
-                            pygame.mixer.music.pause()
-                        else:
-                            pygame.mixer.music.unpause()
-                if not self.in_game_over_screen:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        pos = pygame.mouse.get_pos()
-                        tower_cost = 50
-                        if self.money >= tower_cost and len(self.towers) < self.max_towers:
-                            self.towers.append(Tower(pos[0], pos[1]))
-                            self.money -= tower_cost
-                        elif len(self.towers) >= self.max_towers:
-                            print("Limite de tours atteinte ! (max actuel :", self.max_towers, ")")
-                else:
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                        if self.check_next_level_button(pygame.mouse.get_pos()):
-                            self.in_game_over_screen = False
-                            self.start_new_level()
+     while self.running:
+        self.clock.tick(60)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            # ✅ Correction ici : on vérifie d'abord le type de l'événement
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_p:
+                    self.paused = not self.paused
+                    if self.paused:
+                        pygame.mixer.music.pause()
+                    else:
+                        pygame.mixer.music.unpause()
 
             if not self.in_game_over_screen:
-                if not self.paused:
-                    self.update()
-                self.draw()
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    pos = pygame.mouse.get_pos()
+                    tower_cost = 50
+                    if self.money >= tower_cost and len(self.towers) < self.max_towers:
+                        self.towers.append(Tower(pos[0], pos[1]))
+                        self.money -= tower_cost
+                    elif len(self.towers) >= self.max_towers:
+                        print("Limite de tours atteinte ! (max actuel :", self.max_towers, ")")
+            else:
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    if self.check_next_level_button(pygame.mouse.get_pos()):
+                        self.in_game_over_screen = False
+                        self.start_new_level()
 
-            if self.castle_health <= 0:
-                self.lives -= 1
-                self.in_game_over_screen = True
-                self.save_score(self.score)
-                self.display_game_over("Game Over!")
-                pygame.display.update()
-                self.wait_for_restart()
+        # ✅ La logique de mise en pause : on ne touche pas à la liste des tours
+        if not self.in_game_over_screen:
+            if not self.paused:
+                self.update()  # Met à jour les ennemis et autres éléments
+            self.draw()  # Dessine les éléments du jeu, y compris les tours
 
-            if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
-                self.in_game_over_screen = True
-                self.save_score(self.score)
-                if self.level >= 10:
-                    self.display_game_over("Félicitations, vous avez terminé le jeu !")
-                else:
-                    self.display_game_over("Félicitations, vous avez gagné !")
-                pygame.display.update()
+        if self.castle_health <= 0:
+            self.lives -= 1
+            self.in_game_over_screen = True
+            self.save_score(self.score)
+            self.display_game_over("Game Over!")
+            pygame.display.update()
+            self.wait_for_restart()
+
+        if self.wave_number >= self.max_waves and len(self.enemies) == 0 and self.castle_health > 0:
+            self.in_game_over_screen = True
+            self.save_score(self.score)
+            if self.level >= 10:
+                self.display_game_over("Félicitations, vous avez terminé le jeu !")
+            else:
+                self.display_game_over("Félicitations, vous avez gagné !")
+            pygame.display.update()
+
+
+
+
 
     def update(self):
         if self.wave_number < self.max_waves and self.spawned_enemies < self.enemies_per_wave:
@@ -119,8 +127,8 @@ class Game:
             enemy.update()
 
         for enemy in self.enemies[:]:
-            dx = enemy.pos[0] - WAYPOINTS[-1][0]
-            dy = enemy.pos[1] - WAYPOINTS[-1][1]
+            dx = enemy.pos[0] - self.waypoints[-1][0] #WAYPOINTS modif initial
+            dy = enemy.pos[1] - self.waypoints[-1][1] #WAYPOINTS modif initial
             distance = (dx**2 + dy**2) ** 0.5
             if distance < 10:
                 self.enemies.remove(enemy)
@@ -131,8 +139,6 @@ class Game:
                 self.enemies.remove(enemy)
                 self.money += 50
                 self.score += 10
-                self.energy += 30 if enemy.enemy_type == "boss" else 10
-                self.energy = min(self.energy, self.max_energy)
 
         for tower in self.towers:
             tower.update(self.enemies)
@@ -140,6 +146,7 @@ class Game:
         if len(self.enemies) == 0 and self.spawned_enemies >= self.enemies_per_wave:
             self.wave_number += 1
             self.spawned_enemies = 0
+
             if self.wave_number == self.max_waves - 1:
                 self.warning_message = "⚠️ Un puissant boss approche ! ⚠️"
                 self.warning_start_time = pygame.time.get_ticks()
@@ -151,7 +158,7 @@ class Game:
         self.screen.fill((34, 139, 34))
         self.draw_path()
 
-        castle_pos = WAYPOINTS[-1]
+        castle_pos = self.waypoints[-1] #WAYPOINTS modif initial
         castle_rect = self.castle_image.get_rect(center=castle_pos)
         self.screen.blit(self.castle_image, castle_rect)
 
@@ -161,17 +168,18 @@ class Game:
         self.screen.blit(health_text, text_rect)
 
         for tower in self.towers:
-            if not self.paused:
-                tower.update(self.enemies)
-            tower.draw(self.screen)
+         if not self.paused:
+          tower.update(self.enemies)
+          tower.draw(self.screen)
+
 
         for enemy in self.enemies:
             enemy.draw(self.screen)
 
+        font = pygame.font.SysFont(None, 28)
         self.screen.blit(font.render(f"Argent: ${self.money}", True, (255, 255, 255)), (10, 10))
-        self.screen.blit(font.render(f"Énergie: {self.energy}/{self.max_energy}", True, (0, 255, 255)), (10, 40))
-        self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 70))
-        self.screen.blit(font.render(f"Tours : {len(self.towers)} / {self.max_towers}", True, (255, 255, 255)), (10, 100))
+        self.screen.blit(font.render(f"Vague: {min(self.wave_number + 1, self.max_waves)}/{self.max_waves}", True, (255, 255, 255)), (10, 50))
+        self.screen.blit(font.render(f"Tours : {len(self.towers)} / {self.max_towers}", True, (255, 255, 255)), (10, 90))
         self.screen.blit(font.render(f"Niveau : {self.level}/10", True, (255, 255, 255)), (10, 130))
 
         for i in range(self.lives):
@@ -182,8 +190,8 @@ class Game:
         if self.warning_message:
             current_time = pygame.time.get_ticks()
             if current_time - self.warning_start_time < self.warning_duration:
-                big_font = pygame.font.SysFont(None, 48)
-                warning_text = big_font.render(self.warning_message, True, (255, 0, 0))
+                font = pygame.font.SysFont(None, 48)
+                warning_text = font.render(self.warning_message, True, (255, 0, 0))
                 self.screen.blit(warning_text, (
                     self.screen.get_width() // 2 - warning_text.get_width() // 2,
                     self.screen.get_height() // 2 - 100))
@@ -191,8 +199,8 @@ class Game:
                 self.warning_message = ""
 
         if self.paused:
-            big_font = pygame.font.SysFont(None, 72)
-            pause_text = big_font.render("Pause", True, (255, 255, 255))
+            font = pygame.font.SysFont(None, 72)
+            pause_text = font.render("Pause", True, (255, 255, 255))
             self.screen.blit(pause_text, (
                 self.screen.get_width() // 2 - pause_text.get_width() // 2,
                 self.screen.get_height() // 2 - pause_text.get_height() // 2))
@@ -200,9 +208,9 @@ class Game:
         pygame.display.flip()
 
     def draw_path(self):
-        for i in range(len(WAYPOINTS) - 1):
-            start = WAYPOINTS[i]
-            end = WAYPOINTS[i + 1]
+        for i in range(len(self.waypoints) - 1): #WAYPOINTS modif initial
+            start = self.waypoints[i] #WAYPOINTS modif initial
+            end = self.waypoints[i + 1] #WAYPOINTS modif initial
             dx, dy = end[0] - start[0], end[1] - start[1]
             distance = math.hypot(dx, dy)
             if distance < 1:
@@ -216,6 +224,7 @@ class Game:
                 rotated_image = pygame.transform.rotate(self.road_image, -math.degrees(angle))
                 rect = rotated_image.get_rect(center=(x, y))
                 self.screen.blit(rotated_image, rect)
+    
 
     def display_game_over(self, message="Game Over"):
         font = pygame.font.SysFont(None, 72)
@@ -227,7 +236,7 @@ class Game:
         self.screen.blit(game_over_text, (self.screen.get_width() // 2 - game_over_text.get_width() // 2, text_y))
         self.screen.blit(restart_text, (self.screen.get_width() // 2 - restart_text.get_width() // 2, text_y + 100))
 
-        if message.startswith("Félicitations"):
+        if message == "Félicitations, vous avez gagné !" or message == "Félicitations, vous avez terminé le jeu !":
             self.display_next_level_button()
 
         self.display_highscores()
@@ -292,6 +301,26 @@ class Game:
             self.enemy_speed += 0.1
             if self.max_towers < self.max_towers_limit:
                 self.max_towers += 1
+            
+                        # Ajout de la condition pour le choix de la map 2 au niveau 2
+            if self.level == 2:
+                self.waypoints = WAYPOINTS_NIVEAU2
+            else:
+                self.waypoints = WAYPOINTS_NIVEAU3  # Ou une autre map, si vous en avez*
+
+                        # Ajout de la condition pour le choix de la map 4 au niveau 4
+            if self.level == 4:
+                self.waypoints = WAYPOINTS_NIVEAU4
+            else:
+                self.waypoints = WAYPOINTS_NIVEAU3
+# -------------------------------------------------------------------------------------------------
+            #               # Ajout de la condition pour le choix de la map 3 au niveau 3
+            # if self.level == 3:
+            #     self.waypoints = WAYPOINTS_NIVEAU3
+            # else:
+            #     self.waypoints = WAYPOINTS  # Ou une autre map, si vous en avez*
+# -------------------------------------------------------------------------------------------------
+
         else:
             self.in_game_over_screen = True
             self.save_score(self.score)
@@ -313,17 +342,16 @@ class Game:
         if self.spawned_enemies < self.enemies_per_wave:
             if self.wave_number == self.max_waves - 1:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="boss", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             elif self.wave_number == self.max_waves - 2:
                 if self.spawned_enemies == self.enemies_per_wave - 1:
-                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="mini-boss", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
                 else:
-                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
+                    enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             else:
-                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed)
-
+                enemy = Enemy(enemy_type="normal", speed=self.enemy_speed, waypoints=self.waypoints) # rajout de waypoints=self.waypoints
             self.enemies.append(enemy)
             self.spawned_enemies += 1
             self.spawn_delay = 500
